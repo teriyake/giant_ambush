@@ -9,7 +9,7 @@ public class PlayerMovement : NetworkBehaviour
 {
     [Header("Tracking Target")]
     [Tooltip("If null, will attempt to use Camera.main")]
-    [SerializeField] private Transform m_cameraToTrack;
+    [HideInInspector] public Transform m_cameraToTrack;
 
     [Header("Smoothing (Optional)")]
     [Tooltip("Apply smoothing to remote players' movement?")]

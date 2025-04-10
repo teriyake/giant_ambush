@@ -15,11 +15,12 @@ GameObject:
   - component: {fileID: 2866895438108857331}
   - component: {fileID: 8960524533174161986}
   - component: {fileID: -6200053511787447056}
+  - component: {fileID: -8816772605445369397}
   - component: {fileID: 4306071446420290491}
   - component: {fileID: 1631736293786552838}
-  - component: {fileID: -433326242124285477}
+  - component: {fileID: -9174143602540099461}
   m_Layer: 0
-  m_Name: ARHostPlayer
+  m_Name: Player_ARVR
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -68,7 +69,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 69629fbc6881d4dcfaa20d98d43ca3dd, type: 2}
+  - {fileID: -2505642851634945670, guid: f396e3429a4864fc2ad497cb3ce5fe2c, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -123,7 +124,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3075014208
+  GlobalObjectIdHash: 2635813401
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -177,7 +178,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_hostMaterial: {fileID: 2100000, guid: 69629fbc6881d4dcfaa20d98d43ca3dd, type: 2}
   m_clientMaterial: {fileID: 2100000, guid: 76eca8d0c847a40aebcddeb99e9475e3, type: 2}
---- !u!114 &4306071446420290491
+--- !u!114 &-8816772605445369397
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -185,6 +186,23 @@ MonoBehaviour:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1618725237159975800}
   m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ddfcb474d14740aab7a5d2896fdebb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_interactableLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_maxInteractionDistance: 50
+  m_playerCamera: {fileID: 0}
+--- !u!114 &4306071446420290491
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1618725237159975800}
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: efe242216adc2433d9c218dbd202c2d3, type: 3}
   m_Name: 
@@ -207,7 +225,7 @@ MonoBehaviour:
   m_cameraToTrack: {fileID: 0}
   m_smoothRemoteMovement: 1
   m_remoteSmoothingFactor: 8
---- !u!114 &-433326242124285477
+--- !u!114 &-9174143602540099461
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -216,7 +234,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1618725237159975800}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ecbc49cf39c9b4e23952024510c4ab1c, type: 3}
+  m_Script: {fileID: 11500000, guid: 5dbc27a18edc74b72bda7884b3aad688, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  arPlaneManager: {fileID: 0}
+  m_raycastManager: {fileID: 0}
+  m_planeManager: {fileID: 0}
+  m_levelPlaceholderPrefab: {fileID: 1226050797913982990, guid: 8b20eb73f591b4177ab7ab9199b8676e,
+    type: 3}
+  m_levelPieceLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295

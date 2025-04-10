@@ -3,7 +3,11 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - AROrigin
+  - VROrigin
+  - EnvironmentAnchor
+  - ARMeshManager
   layers:
   - Default
   - TransparentFX

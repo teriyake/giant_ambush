@@ -184,7 +184,7 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 604599022}
-    PlayerPrefab: {fileID: 1618725237159975800, guid: 5b554fa2d92f1436f9b56bd27e1fcf8f,
+    PlayerPrefab: {fileID: 1618725237159975800, guid: 2e45ce6ca086a4a9b8092936bf911d31,
       type: 3}
     Prefabs:
       NetworkPrefabsLists:
@@ -1150,6 +1150,7 @@ GameObject:
   - component: {fileID: 1283312879}
   - component: {fileID: 1283312878}
   - component: {fileID: 1283312883}
+  - component: {fileID: 1283312884}
   m_Layer: 0
   m_Name: XR Origin (Mobile AR)
   m_TagString: Untagged
@@ -1247,6 +1248,19 @@ MonoBehaviour:
   _sharedArRootPrefab: {fileID: 4781414300907772666, guid: addffc4d55be14f14b776b2b504b86d6,
     type: 3}
   _arLocationManager: {fileID: 0}
+--- !u!114 &1283312884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1283312877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 728ad7fae8e460a4ba41265c7308d757, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AnchorPrefab: {fileID: 0}
 --- !u!1 &1404875045
 GameObject:
   m_ObjectHideFlags: 0

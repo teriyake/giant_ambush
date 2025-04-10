@@ -5,15 +5,18 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Tests/TestMenu.unity
     guid: 8d70494811fd7498d8f0dda82fb97116
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Tests/Meshing.unity
     guid: e352aa6a010154285b21a3d67feb3eb6
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Tests/Multiplayer.unity
     guid: d8eaaf1cff5cb47cc823f462e946b3ba
+  - enabled: 1
+    path: Assets/Scenes/Tests/ARLevelSpawning/ARLevelSpawning.unity
+    guid: 34ecc03137265487998bdacc59c1650d
   m_configObjects:
     Niantic.Lightship.AR.LightshipSettings: {fileID: 11400000, guid: e9a1dabd15b2b4fd48ee4c2fa4b6eadb,
       type: 2}

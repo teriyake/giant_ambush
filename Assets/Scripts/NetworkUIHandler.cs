@@ -47,6 +47,7 @@ public class NetworkUIHandler : MonoBehaviour
             NetworkManager.Singleton.StartClient();
             HideButtons();
         });
+
     }
 
     void HideButtons()
@@ -59,7 +60,44 @@ public class NetworkUIHandler : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        NetworkManager.Singleton.OnServerStarted += () => 
+        {
+            RoleManager.VRClientId = NetworkManager.Singleton.LocalClientId;
+            Debug.Log($"Host started. Assigned VR Giant role to Client ID: {RoleManager.VRClientId}");
+        };
+
+        NetworkManager.Singleton.OnClientConnectedCallback += (clientId) => 
+        {
+            if (!NetworkManager.Singleton.IsHost)
+            {
+                if(RoleManager.AntClientId == ulong.MaxValue)
+                {
+                    RoleManager.AntClientId = clientId;
+                    Debug.Log($"Client connected. Assigned Ant role to Client ID: {clientId}");
+                }
+            }
+            else if (NetworkManager.Singleton.IsHost && clientId != NetworkManager.Singleton.LocalClientId)
+            {  
+                if(RoleManager.AntClientId == ulong.MaxValue)
+                {
+                    RoleManager.AntClientId = clientId;
+                    Debug.Log($"Client {clientId} connected to Host. Assigned Ant role.");
+                }
+            }
+        }; 
+
+        NetworkManager.Singleton.OnClientDisconnectCallback += (clientId) => 
+        {
+            if (clientId == RoleManager.VRClientId)
+            {
+                RoleManager.VRClientId = ulong.MaxValue;
+                Debug.Log($"VR Giant (Client {clientId}) disconnected.");
+            }
+            if (clientId == RoleManager.AntClientId) {
+                RoleManager.AntClientId = ulong.MaxValue;
+                Debug.Log($"Ant (Client {clientId}) disconnected.");
+            }
+        };
     }
 
     // Update is called once per frame
