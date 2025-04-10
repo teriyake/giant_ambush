@@ -8,6 +8,7 @@ TagManager:
   - VROrigin
   - EnvironmentAnchor
   - ARMeshManager
+  - VRCamera
   layers:
   - Default
   - TransparentFX

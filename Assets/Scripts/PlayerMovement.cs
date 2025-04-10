@@ -11,12 +11,6 @@ public class PlayerMovement : NetworkBehaviour
     [Tooltip("If null, will attempt to use Camera.main")]
     [HideInInspector] public Transform m_cameraToTrack;
 
-    [Header("Smoothing (Optional)")]
-    [Tooltip("Apply smoothing to remote players' movement?")]
-    [SerializeField] private bool m_smoothRemoteMovement = true;
-    [Tooltip("How quickly remote players snap to their target position/rotation.")]
-    [SerializeField] private float m_remoteSmoothingFactor = 8.0f;
-
     private Transform m_playerObjectTransform;
     private bool m_isTracking = false;
     private NetworkTransform m_networkTransform;
@@ -27,25 +21,20 @@ public class PlayerMovement : NetworkBehaviour
 
         if (IsOwner)
         {
-            if (m_cameraToTrack == null)
+            if (PlatformRoleManager.Instance != null && PlatformRoleManager.Instance.IsPlatformReady)
             {
-                Camera mainCam = Camera.main;
-                if (mainCam != null)
-                {
-                    m_cameraToTrack = mainCam.transform;
-                    Debug.Log($"PlayerMovementTracker (Owner: {OwnerClientId}): Found and tracking Camera.main: {m_cameraToTrack.gameObject.name}");
-                    m_isTracking = true;
-                }
-                else
-                {
-                    Debug.LogError($"PlayerMovementTracker (Owner: {OwnerClientId}): Could not find main camera to track! Avatar will not follow device movement.", this);
-                    m_isTracking = false;
-                }
-            } 
-            else 
+                Debug.Log($"PlayerMovement (Owner: {OwnerClientId}): Platform already ready. Initializing camera tracking.");
+                InitializeCameraTracking();
+            }
+            else if (PlatformRoleManager.Instance != null)
             {
-                Debug.Log($"PlayerMovementTracker (Owner: {OwnerClientId}): Tracking pre-assigned camera: {m_cameraToTrack.gameObject.name}");
-                m_isTracking = true;
+                Debug.Log($"PlayerMovement (Owner: {OwnerClientId}): Platform not ready yet. Subscribing to OnPlatformReady event.");
+                PlatformRoleManager.Instance.OnPlatformReady += InitializeCameraTracking;
+            }
+            else
+            {
+                Debug.LogError($"PlayerMovement (Owner: {OwnerClientId}): PlatformRoleManager Instance not found on spawn!", this);
+                m_isTracking = false;
             }
 
             m_networkTransform = GetComponent<NetworkTransform>();
@@ -57,6 +46,40 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
 
+    private void InitializeCameraTracking()
+    {
+        if (!IsOwner || m_isTracking) return;
+
+        if (m_cameraToTrack == null)
+        {
+            Camera mainCam = Camera.main;
+            if (mainCam != null)
+            {
+                m_cameraToTrack = mainCam.transform;
+                Debug.Log($"PlayerMovementTracker (Owner: {OwnerClientId}): Found and tracking Camera.main: {m_cameraToTrack.gameObject.name}");
+                m_isTracking = true;
+            }
+            else
+            {
+                Debug.LogError($"PlayerMovementTracker (Owner: {OwnerClientId}): Could not find main camera to track! Avatar will not follow device movement.", this);
+                m_isTracking = false;
+            }
+        } 
+        else 
+        {
+            Debug.Log($"PlayerMovementTracker (Owner: {OwnerClientId}): Tracking pre-assigned camera: {m_cameraToTrack.gameObject.name}");
+            m_isTracking = true;
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (IsOwner && PlatformRoleManager.Instance != null)
+        {
+            PlatformRoleManager.Instance.OnPlatformReady -= InitializeCameraTracking;
+        }
+        base.OnNetworkDespawn();
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -86,5 +109,14 @@ public class PlayerMovement : NetworkBehaviour
 
         // Debug.Log($"Server Received Pose from Client {rpcParams.Receive.SenderClientId}: Applying Pos={position}, Rot={rotation.eulerAngles} to NetworkObject {NetworkObjectId}");
 
+    }
+
+    public override void OnDestroy()
+    {
+        if (IsOwner && PlatformRoleManager.Instance != null)
+        {
+            PlatformRoleManager.Instance.OnPlatformReady -= InitializeCameraTracking;
+        }
+        base.OnDestroy();
     }
 }

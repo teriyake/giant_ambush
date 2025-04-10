@@ -11,11 +11,23 @@ public class NetworkUIHandler : MonoBehaviour
     [SerializeField] private Button m_hostButton;
     [SerializeField] private Button m_clientButton;
     [SerializeField] private TMP_InputField m_ipAddressInput;
+    [SerializeField] private PlatformRoleManager m_platformRoleManager;
 
     void Awake()
     {
+        if (m_platformRoleManager == null)
+        {
+            m_platformRoleManager = FindObjectOfType<PlatformRoleManager>();
+            if (m_platformRoleManager == null)
+            {
+                Debug.LogWarning("NetworkUIHandler: PlatformRoleManager not found in scene!", this);
+            }
+        }
+
         m_hostButton.onClick.AddListener(() =>
         {
+            if (m_platformRoleManager != null) m_platformRoleManager.SetupForRole(true);
+
             Debug.Log("STARTING HOST...");
             NetworkManager.Singleton.StartHost();
             HideButtons();
@@ -26,8 +38,7 @@ public class NetworkUIHandler : MonoBehaviour
             string ipAddress = m_ipAddressInput.text;
             if (string.IsNullOrWhiteSpace(ipAddress))
             {
-                Debug.LogError("IP Address cannot be empty when starting client!");
-                return;
+                ipAddress = "127.0.0.1";
             }
 
             UnityTransport transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
@@ -42,6 +53,8 @@ public class NetworkUIHandler : MonoBehaviour
                 Debug.LogError("UnityTransport component not found on NetworkManager!");
                 return;
             }
+
+            if (m_platformRoleManager != null) m_platformRoleManager.SetupForRole(false);
 
             Debug.Log("STARTING CLIENT...");
             NetworkManager.Singleton.StartClient();

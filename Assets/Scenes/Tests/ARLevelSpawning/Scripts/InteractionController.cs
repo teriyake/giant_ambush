@@ -11,42 +11,90 @@ public class InteractionController : NetworkBehaviour
     [SerializeField] private LayerMask m_interactableLayer;
     [SerializeField] private float m_maxInteractionDistance = 50f;
     [SerializeField] private Camera m_playerCamera;
-    //
-    // Start is called before the first frame update
-    void Start()
+
+    private bool m_canInteract = false;
+
+    public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
         if (!IsOwner)
         {
             enabled = false;
             return;
         }
 
+        if (PlatformRoleManager.Instance != null && PlatformRoleManager.Instance.IsPlatformReady)
+        {
+            Debug.Log($"InteractionController (Owner: {OwnerClientId}): Platform already ready. Initializing interaction camera.");
+            InitializeInteractionCamera();
+        }
+        else if (PlatformRoleManager.Instance != null)
+        {
+            Debug.Log($"InteractionController (Owner: {OwnerClientId}): Platform not ready yet. Subscribing to OnPlatformReady event.");
+            PlatformRoleManager.Instance.OnPlatformReady += InitializeInteractionCamera;
+        }
+        else
+        {
+             Debug.LogError($"InteractionController (Owner: {OwnerClientId}): PlatformRoleManager Instance not found on spawn!", this);
+             m_canInteract = false;
+        }
+    }
+
+    private void InitializeInteractionCamera()
+    {
+        if (!IsOwner || m_canInteract) return;
+
+        Debug.Log($"InteractionController (Owner: {OwnerClientId}): InitializeInteractionCamera called.");
+
         if (m_playerCamera == null)
         {
             m_playerCamera = Camera.main;
+            if (m_playerCamera != null)
+            {
+                Debug.Log($"InteractionController (Owner: {OwnerClientId}): Found Camera.main: {m_playerCamera.name}", m_playerCamera.gameObject);
+            }
         }
-        if (m_playerCamera == null)
+        else 
         {
-            Debug.LogError("InteractionController: Player Camera not found! Interaction will not work.", this);
-            enabled = false;
+            Debug.Log($"InteractionController (Owner: {OwnerClientId}): Using pre-assigned camera: {m_playerCamera.name}");
         }
 
-        if (m_interactableLayer == 0) 
+        if (m_playerCamera == null)
         {
-            Debug.LogWarning("InteractionController: Interactable Layer is not set. Interactions might fail.", this);
+            Debug.LogError($"InteractionController (Owner: {OwnerClientId}): Player Camera not found AFTER platform ready! Interaction will not work.", this);
+            m_canInteract = false;
+            enabled = false; 
+        }
+        else
+        {
+            m_canInteract = true;
+            if (m_interactableLayer == 0) 
+            {
+                Debug.LogWarning("InteractionController: Interactable Layer is not set.", this);
+            }
         }
     }
+
+    public override void OnNetworkDespawn()
+    {
+        if (IsOwner && PlatformRoleManager.Instance != null)
+        {
+            PlatformRoleManager.Instance.OnPlatformReady -= InitializeInteractionCamera;
+            Debug.Log($"InteractionController (Owner: {OwnerClientId}): Unsubscribed from OnPlatformReady.");
+        }
+        base.OnNetworkDespawn();
+    }
+
+    // Start is called before the first frame update
+    void Start() {  }
 
     // Update is called once per frame
     void Update()
     {
-        if (!IsOwner || m_playerCamera == null) return;
+        if (!m_canInteract || m_playerCamera == null) return;
 
         Pointer currentPointer = Pointer.current;
-        if (currentPointer == null || !currentPointer.press.wasPressedThisFrame)
-        {
-            return;
-        }
+        if (currentPointer == null || !currentPointer.press.wasPressedThisFrame) return;
 
         Vector2 screenPosition = currentPointer.position.ReadValue();
 
@@ -55,8 +103,6 @@ public class InteractionController : NetworkBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, m_maxInteractionDistance, m_interactableLayer))
         {
-            Debug.Log($"InteractionController: Ray hit object '{hit.collider.gameObject.name}' on layer {LayerMask.LayerToName(hit.collider.gameObject.layer)}");
-
             NetworkedLevelPiece levelPiece = hit.collider.GetComponent<NetworkedLevelPiece>();
             if (levelPiece != null)
             {
@@ -72,6 +118,14 @@ public class InteractionController : NetworkBehaviour
         {
             Debug.Log("InteractionController: Tap/click did not hit any interactable object.");
         }
-        
+    }
+
+    public override void OnDestroy()
+    {
+        if (IsOwner && PlatformRoleManager.Instance != null)
+        {
+            PlatformRoleManager.Instance.OnPlatformReady -= InitializeInteractionCamera;
+        }
+        base.OnDestroy();
     }
 }

@@ -33,13 +33,13 @@ public class ARLevelSetup : NetworkBehaviour
         {
             m_canAttemptSpawn = false;
             enabled = false;
-            Debug.Log($"ARLevelSetup on NetworkObject {NetworkObjectId}: Disabling spawn attempt logic. IsOwner={IsOwner}, IsHost={NetworkManager.Singleton.IsHost}");
+            // Debug.Log($"ARLevelSetup on NetworkObject {NetworkObjectId}: Disabling spawn attempt logic. IsOwner={IsOwner}, IsHost={NetworkManager.Singleton.IsHost}");
         }
         else
         {
             m_canAttemptSpawn = true;
             InitializeARComponents();
-            Debug.Log($"ARLevelSetup on NetworkObject {NetworkObjectId}: Enabling spawn attempt logic for AR Client Owner.");
+            // Debug.Log($"ARLevelSetup on NetworkObject {NetworkObjectId}: Enabling spawn attempt logic for AR Client Owner.");
         }
     }
 
@@ -53,6 +53,27 @@ public class ARLevelSetup : NetworkBehaviour
         if (m_anchorManager == null) Debug.LogWarning("ARLevelSetup: ARAnchorManager not found! Anchoring will not work.", this);
         if (m_levelPlaceholderPrefab == null) Debug.LogError("ARLevelSetup: Level Placeholder Prefab not assigned!", this);
 
+        if (m_planeManager != null)
+        {
+            Debug.Log($"ARLevelSetup: Found ARPlaneManager. Is GameObject active? {m_planeManager.gameObject.activeInHierarchy}. Is Component enabled? {m_planeManager.enabled}", m_planeManager.gameObject);
+        // if (!m_planeManager.enabled) {
+        //     Debug.LogWarning("ARPlaneManager component was disabled, attempting to enable it.");
+        //     m_planeManager.enabled = true;
+        // }
+        }
+        else
+        {
+            Debug.LogError("ARLevelSetup: ARPlaneManager component STILL not found after rig activation attempt!", this);
+        }
+        if (m_raycastManager != null)
+        {
+            Debug.Log($"ARLevelSetup: Found ARRaycastManager. Is GameObject active? {m_raycastManager.gameObject.activeInHierarchy}. Is Component enabled? {m_raycastManager.enabled}", m_raycastManager.gameObject);
+        }
+        else 
+        {
+            Debug.LogError("ARLevelSetup: ARRaycastManager component STILL not found!", this);
+        }
+
         Debug.Log("ARLevelSetup initialized for local AR player. Tap on a detected plane to set up the level.");
     }
 
@@ -65,6 +86,36 @@ public class ARLevelSetup : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
+        /*
+        if (m_canAttemptSpawn)
+        {
+            if (Time.frameCount % 60 == 0) 
+            {
+                if (ARSession.state == ARSessionState.Unsupported || ARSession.state == ARSessionState.NeedsInstall) 
+                {
+                    Debug.LogError($"AR Session State Error: {ARSession.state}");
+                } 
+                else if (ARSession.state == ARSessionState.Ready || ARSession.state == ARSessionState.SessionInitializing) 
+                {
+                    Debug.LogWarning($"AR Session State Waiting: {ARSession.state}");
+                } 
+                else if (ARSession.state == ARSessionState.SessionTracking) 
+                {
+                    Debug.Log($"AR Session State OK: {ARSession.state}");
+                } 
+                else 
+                {
+                    Debug.Log($"AR Session State: {ARSession.state}");
+                }
+
+                if (ARSession.notTrackingReason != NotTrackingReason.None) 
+                {
+                    Debug.LogWarning($"AR Session Not Tracking Reason: {ARSession.notTrackingReason}");
+                }
+            }
+        }
+        */
+
         if (!m_canAttemptSpawn || m_levelSpawned || m_raycastManager == null || m_levelPlaceholderPrefab == null)
         {
             return;
