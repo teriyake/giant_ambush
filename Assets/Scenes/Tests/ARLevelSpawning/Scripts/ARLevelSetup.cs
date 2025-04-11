@@ -199,15 +199,15 @@ public class ARLevelSetup : NetworkBehaviour
         if (plane != null)
         {
             Debug.Log($"ARLevelSetup: Tapped Plane Info:\n" +
-                      $"  - Trackable ID: {plane.trackableId}\n" +
+                    //   $"  - Trackable ID: {plane.trackableId}\n" +
                       $"  - Alignment: {plane.alignment}\n" + 
-                      $"  - Classification: {plane.classification}\n" +
+                    //   $"  - Classification: {plane.classification}\n" +
                       $"  - Center (World Space): {plane.center}\n" +
                       $"  - Size (Approx): {plane.size}\n" + 
-                      $"  - Extents (Half Size): {plane.extents}\n" + 
-                      $"  - Normal (World Space): {plane.normal}\n" + 
-                      $"  - Pose Position (Tap Location): {arHit.pose.position}\n" + 
-                      $"  - Pose Rotation (Surface Orientation at Tap): {arHit.pose.rotation}\n" +
+                    //   $"  - Extents (Half Size): {plane.extents}\n" + 
+                    //   $"  - Normal (World Space): {plane.normal}\n" + 
+                    //   $"  - Pose Position (Tap Location): {arHit.pose.position}\n" + 
+                    //   $"  - Pose Rotation (Surface Orientation at Tap): {arHit.pose.rotation}\n" +
                       $"  - Boundary Vertices Count: {plane.boundary.Length}");
         }
         else

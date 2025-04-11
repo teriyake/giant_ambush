@@ -16,7 +16,9 @@ GameObject:
   - component: {fileID: 114999847245811208}
   - component: {fileID: 6082034917998997483}
   - component: {fileID: 6937952873183941523}
-  m_Layer: 0
+  - component: {fileID: 5347313406855833268}
+  - component: {fileID: 8716809703039790590}
+  m_Layer: 2
   m_Name: ARFeatheredPlane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -55,7 +57,7 @@ MeshCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
@@ -166,3 +168,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_PlaneRenderer: {fileID: 23747677035716922}
   m_FadeSpeed: 0.25
+--- !u!114 &5347313406855833268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1585201990951412}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2163414283
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!114 &8716809703039790590
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1585201990951412}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5973898281ac34c98930c5100579e20c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_meshRenderer: {fileID: 23747677035716922}
+  IsDestroyed:
+    m_InternalValue: 0
