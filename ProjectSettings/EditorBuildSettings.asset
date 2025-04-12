@@ -17,9 +17,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/Tests/ARLevelSpawning/ARLevelSpawning.unity
     guid: 34ecc03137265487998bdacc59c1650d
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Tests/ARLevelSpawning/ARVR.unity
     guid: 0903779c61e604b6ca24248472230af7
+  - enabled: 1
+    path: Assets/Scenes/Tests/Relay/RelayMultiplayer.unity
+    guid: 131da3eb973e2497cb9cc400bbccb1d7
   m_configObjects:
     Niantic.Lightship.AR.LightshipSettings: {fileID: 11400000, guid: e9a1dabd15b2b4fd48ee4c2fa4b6eadb,
       type: 2}
