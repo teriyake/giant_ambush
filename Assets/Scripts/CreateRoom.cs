@@ -9,7 +9,7 @@ public class CreateRoom : MonoBehaviour
     public GameObject wallPrefab, cornerPrefab, floorPrefab;
 
     public GameObject[] roomPrefabs;
-    public Transform[] roomCorners;
+    List<Transform> roomCorners = new List<Transform>();
     List<GameObject> roomObjects = new List<GameObject>();
     BoxCollider collider;
     Vector2 roomSize;
@@ -19,8 +19,12 @@ public class CreateRoom : MonoBehaviour
         collider = GetComponent<BoxCollider>();
         for (int i=0;i<roomPrefab.transform.childCount;i++){
             GameObject obj = roomPrefab.transform.GetChild(i).gameObject;
-            if (!obj.name.Contains("Wall"))
+            if(obj.name.Contains("Corner")){
+                roomCorners.Add(obj.transform);
+            }
+            else if (!obj.name.Contains("Wall")){
                 roomObjects.Add(obj);
+            }  
         }
 
         ConstructRoom(new Vector2(20, 20)); 
