@@ -135,13 +135,28 @@ public class ARLevelSetup : NetworkBehaviour
         if (m_raycastManager.Raycast(screenPosition, m_raycastHits, TrackableType.PlaneWithinPolygon))
         {
             Pose hitPose = m_raycastHits[0].pose;
+            ARPlane plane = m_planeManager.GetPlane(m_raycastHits[0].trackableId);
+            Vector2 planeSize = Vector2.zero;
 
-            Debug.Log($"ARLevelSetup: AR Plane detected at {hitPose.position}. Requesting level spawn.");
-            LogPlaneDetails(m_raycastHits[0]);
+            if (plane != null)
+            {
+                planeSize = plane.size;
+                Debug.Log($"ARLevelSetup: AR Plane detected at {hitPose.position}. Pose Rotation: {hitPose.rotation.eulerAngles}");
+            }
+
+            const float minPlaneSize = 0.5f;
+            if (planeSize.x < minPlaneSize || planeSize.y < minPlaneSize)
+            {
+                Debug.LogWarning($"ARLevelSetup: Detected plane size ({planeSize.x:F2}m x {planeSize.y:F2}m) is too small or invalid. Ignoring tap.");
+                return;
+            }
+
+            // LogPlaneDetails(m_raycastHits[0]);
 
             m_anchorPose = hitPose;
 
-            RequestLevelSpawnServerRpc(hitPose.position, hitPose.rotation);
+            Debug.Log($"ARLevelSetup: Requesting procedural level spawn with Size: {planeSize} at Pose: {hitPose.position}, {hitPose.rotation.eulerAngles}");
+            RequestLevelSpawnServerRpc(hitPose.position, hitPose.rotation, planeSize);
 
             m_levelSpawned = true;
             // m_canAttemptSpawn = false;
@@ -162,27 +177,36 @@ public class ARLevelSetup : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = true)]
-    private void RequestLevelSpawnServerRpc(Vector3 position, Quaternion rotation, ServerRpcParams rpcParams = default)
+    private void RequestLevelSpawnServerRpc(Vector3 position, Quaternion rotation, Vector2 size, ServerRpcParams rpcParams = default)
     {
         if (m_levelPlaceholderPrefab == null) return;
 
-        Debug.Log($"Server received level spawn request from Client {rpcParams.Receive.SenderClientId} at pos {position}");
+        Debug.Log($"Server received procedural level spawn request from Client {rpcParams.Receive.SenderClientId} at pos {position}, size {size}");
 
-        GameObject levelObject = Instantiate(m_levelPlaceholderPrefab, position, rotation);
+        GameObject roomSpawnerObject = Instantiate(m_levelPlaceholderPrefab, position, rotation);
 
-        NetworkObject networkObject = levelObject.GetComponent<NetworkObject>();
-        if (networkObject == null)
+        CreateRoom roomCreator = roomSpawnerObject.GetComponent<CreateRoom>();
+        if (roomCreator == null)
         {
-            Debug.LogError("ServerRpc (RequestLevelSpawn): Spawned level object is missing NetworkObject component!");
-            Destroy(levelObject);
+            Debug.LogError("ServerRpc (RequestLevelSpawn): Spawned room spawner object is missing CreateRoom component!");
+            Destroy(roomSpawnerObject);
             return;
         }
 
-        // TODO: SPAWN ACTUAL LEVEL
-        networkObject.Spawn(true);
-        m_spawnedLevelPieceNetworkId = networkObject.NetworkObjectId;
+        Debug.Log($"Server: Calling CreateRoom.Generate() with size {size} on {roomSpawnerObject.name}");
+        roomCreator.ConstructRoom(size);
 
-        Debug.Log($"Server spawned Level Piece {networkObject.NetworkObjectId} for all clients.");
+        NetworkObject networkObject = roomSpawnerObject.GetComponent<NetworkObject>();
+        if (networkObject == null)
+        {
+            Debug.LogError("ServerRpc (RequestLevelSpawn): Spawned room spawner object is missing NetworkObject component!");
+            Destroy(roomSpawnerObject);
+            return;
+        }
+
+        networkObject.Spawn(true);
+
+        Debug.Log($"Server spawned Procedural Room Spawner {networkObject.NetworkObjectId} for all clients.");
 
         AnchorLevelPieceClientRpc(networkObject.NetworkObjectId, position, rotation);
     }
