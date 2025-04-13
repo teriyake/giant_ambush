@@ -86,36 +86,6 @@ public class ARLevelSetup : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
-        /*
-        if (m_canAttemptSpawn)
-        {
-            if (Time.frameCount % 60 == 0) 
-            {
-                if (ARSession.state == ARSessionState.Unsupported || ARSession.state == ARSessionState.NeedsInstall) 
-                {
-                    Debug.LogError($"AR Session State Error: {ARSession.state}");
-                } 
-                else if (ARSession.state == ARSessionState.Ready || ARSession.state == ARSessionState.SessionInitializing) 
-                {
-                    Debug.LogWarning($"AR Session State Waiting: {ARSession.state}");
-                } 
-                else if (ARSession.state == ARSessionState.SessionTracking) 
-                {
-                    Debug.Log($"AR Session State OK: {ARSession.state}");
-                } 
-                else 
-                {
-                    Debug.Log($"AR Session State: {ARSession.state}");
-                }
-
-                if (ARSession.notTrackingReason != NotTrackingReason.None) 
-                {
-                    Debug.LogWarning($"AR Session Not Tracking Reason: {ARSession.notTrackingReason}");
-                }
-            }
-        }
-        */
-
         if (!m_canAttemptSpawn || m_levelSpawned || m_raycastManager == null || m_levelPlaceholderPrefab == null)
         {
             return;
@@ -181,20 +151,11 @@ public class ARLevelSetup : NetworkBehaviour
     {
         if (m_levelPlaceholderPrefab == null) return;
 
-        Debug.Log($"Server received procedural level spawn request from Client {rpcParams.Receive.SenderClientId} at pos {position}, size {size}");
+        Vector3 spawnPosition = position - rotation * new Vector3(-size.x / 2f, 0, -size.y / 2f);
+        Debug.Log($"Server received procedural level spawn request from Client {rpcParams.Receive.SenderClientId} at pos {spawnPosition}, size {size}");
 
-        GameObject roomSpawnerObject = Instantiate(m_levelPlaceholderPrefab, position, rotation);
-
-        CreateRoom roomCreator = roomSpawnerObject.GetComponent<CreateRoom>();
-        if (roomCreator == null)
-        {
-            Debug.LogError("ServerRpc (RequestLevelSpawn): Spawned room spawner object is missing CreateRoom component!");
-            Destroy(roomSpawnerObject);
-            return;
-        }
-
-        Debug.Log($"Server: Calling CreateRoom.Generate() with size {size} on {roomSpawnerObject.name}");
-        roomCreator.ConstructRoom(size);
+        GameObject roomSpawnerObject = Instantiate(m_levelPlaceholderPrefab, spawnPosition, rotation);
+        roomSpawnerObject.transform.GetChild(0).gameObject.transform.position -= new Vector3(size.x * 0.5f, 0.0f, size.y * 0.5f);
 
         NetworkObject networkObject = roomSpawnerObject.GetComponent<NetworkObject>();
         if (networkObject == null)
@@ -207,6 +168,17 @@ public class ARLevelSetup : NetworkBehaviour
         networkObject.Spawn(true);
 
         Debug.Log($"Server spawned Procedural Room Spawner {networkObject.NetworkObjectId} for all clients.");
+
+        CreateRoom roomCreator = roomSpawnerObject.GetComponent<CreateRoom>();
+        if (roomCreator == null)
+        {
+            Debug.LogError("ServerRpc (RequestLevelSpawn): Spawned room spawner object is missing CreateRoom component!");
+            Destroy(roomSpawnerObject);
+            return;
+        }
+
+        Debug.Log($"Server: Calling CreateRoom.Generate() with size {size} on {roomSpawnerObject.name}");
+        roomCreator.ConstructRoom(size);
 
         AnchorLevelPieceClientRpc(networkObject.NetworkObjectId, position, rotation);
     }
