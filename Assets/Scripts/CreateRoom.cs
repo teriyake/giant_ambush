@@ -80,8 +80,8 @@ public class CreateRoom : MonoBehaviour
 
         int xBound = Mathf.CeilToInt(size.x/roomSize.x);
         int yBound = Mathf.CeilToInt(size.y/roomSize.y);
-        for(int i=0;i<xBound;i++){
-            for(int j=0;j<yBound;j++){
+        for(int i=0;i<xBound-1;i++){
+            for(int j=0;j<yBound-1;j++){
                 if(i == xBound-1 && j == yBound-1){
                     foreach(GameObject obj in xySet){
                         GameObject newObj = Instantiate(obj, roomRoot.transform);
@@ -125,8 +125,8 @@ public class CreateRoom : MonoBehaviour
             }
         }
 
-        for (int i=0;i<=xBound;i++) {
-            for (int j=0;j<=yBound;j++) {
+        for (int i=0;i<=xBound-1;i++) {
+            for (int j=0;j<=yBound-1;j++) {
                 int x = -(int)Mathf.Min(size.x, (i * roomSize.x));
                 int y = -(int)Mathf.Min(size.y, (j * roomSize.y));
                 if ((i == 0 || i == xBound) && (j == 0 || j == yBound)) {
@@ -134,7 +134,7 @@ public class CreateRoom : MonoBehaviour
                     GameObject corner = Instantiate(cornerPrefab, roomRoot.transform);
                     corner.transform.localPosition = new Vector3(x, 0, y);
                 }
-                if (i == 0 || i == xBound) {
+                if (i == 0 || i == xBound-1) {
                     Debug.Log("Creating wall at: " + x + ", " + y);
                     GameObject wall = Instantiate(wallPrefab, roomRoot.transform);
                     wall.transform.localPosition = new Vector3(x, 0, y);
@@ -142,7 +142,7 @@ public class CreateRoom : MonoBehaviour
                     if(i==xBound)
                         wall.transform.localScale = new Vector3(wall.transform.localScale.x, wall.transform.localScale.y, -wall.transform.localScale.z);
                 }
-                if (j == 0 || j == yBound) {
+                if (j == 0 || j == yBound-1) {
                     Debug.Log("Creating wall at: " + x + ", " + y);
                     GameObject wall = Instantiate(wallPrefab, roomRoot.transform);
                     wall.transform.localPosition = new Vector3(x, 0, y);
@@ -163,6 +163,7 @@ public class CreateRoom : MonoBehaviour
         {
             Debug.Log(corner.name + " at position: " + corner.position);
         }
+
         float length = Vector2.Distance(
             new Vector2(roomCorners[0].position.x, roomCorners[0].position.z),
             new Vector2(roomCorners[1].position.x, roomCorners[1].position.z)

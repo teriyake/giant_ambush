@@ -240,8 +240,9 @@ MonoBehaviour:
   m_raycastManager: {fileID: 0}
   m_planeManager: {fileID: 0}
   m_anchorManager: {fileID: 0}
-  m_levelPlaceholderPrefab: {fileID: 5549028673243853784, guid: 163d548adcf1e4cb39d551265b69b44d,
+  m_roomRootPrefab: {fileID: 2946707821392316536, guid: 3804dd0ca9f734ff2ac5f9645c6034bd,
     type: 3}
+  m_roomSpawner: {fileID: 0}
   m_levelPieceLayer:
     serializedVersion: 2
     m_Bits: 4294967295
