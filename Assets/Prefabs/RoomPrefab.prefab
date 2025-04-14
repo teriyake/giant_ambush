@@ -225,8 +225,8 @@ Transform:
   - {fileID: 2310552762474902417}
   - {fileID: 8381187518662186604}
   - {fileID: 3389447122533303776}
-  - {fileID: 8338638329657741845}
   - {fileID: 3904681081444619707}
+  - {fileID: 8338638329657741845}
   - {fileID: 7036498005667627346}
   - {fileID: 1433917344110974685}
   - {fileID: 2933428612875945497}
@@ -483,7 +483,7 @@ PrefabInstance:
     - target: {fileID: 2732132711335018034, guid: ffd39571c14682942b10081c3295091c,
         type: 3}
       propertyPath: m_Name
-      value: Wall Pillar 3
+      value: Wall Pillar 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1545,7 +1545,7 @@ PrefabInstance:
     - target: {fileID: 2732132711335018034, guid: ffd39571c14682942b10081c3295091c,
         type: 3}
       propertyPath: m_Name
-      value: Wall Pillar 3
+      value: Wall Pillar 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4232,7 +4232,7 @@ PrefabInstance:
     - target: {fileID: 2732132711335018034, guid: ffd39571c14682942b10081c3295091c,
         type: 3}
       propertyPath: m_Name
-      value: Wall Pillar 3
+      value: Wall Pillar 1
       objectReference: {fileID: 0}
     - target: {fileID: 4455936026204637934, guid: ffd39571c14682942b10081c3295091c,
         type: 3}
@@ -5116,7 +5116,7 @@ PrefabInstance:
     - target: {fileID: 2732132711335018034, guid: ffd39571c14682942b10081c3295091c,
         type: 3}
       propertyPath: m_Name
-      value: Wall Pillar 3
+      value: Wall Pillar 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

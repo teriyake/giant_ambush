@@ -129,15 +129,15 @@ public class ARLevelSetup : NetworkBehaviour
             RequestLevelSpawnServerRpc(hitPose.position, hitPose.rotation, planeSize);
 
             m_levelSpawned = true;
-            // m_canAttemptSpawn = false;
+            m_canAttemptSpawn = false;
 
             if (m_planeManager != null)
             {
-                // foreach (var plane in m_planeManager.trackables)
-                // {
-                //     plane.gameObject.SetActive(false);
-                // }
-                // m_planeManager.enabled = false;
+                foreach (var p in m_planeManager.trackables)
+                {
+                    p.gameObject.SetActive(false);
+                }
+                m_planeManager.enabled = false;
             }
         }
         else
