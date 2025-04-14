@@ -27,7 +27,6 @@ public class CreateRoom : MonoBehaviour
             }  
         }
 
-        ConstructRoom(new Vector2(20, 20)); 
     }
 
     bool isInBounds(GameObject obj, Bounds bounds){
