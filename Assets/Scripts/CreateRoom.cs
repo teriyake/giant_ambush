@@ -26,7 +26,6 @@ public class CreateRoom : MonoBehaviour
                 roomObjects.Add(obj);
             }  
         }
-
     }
 
     bool isInBounds(GameObject obj, Bounds bounds){
@@ -160,6 +159,10 @@ public class CreateRoom : MonoBehaviour
 
     Vector2 CalculateRoomSize()
     {
+        foreach (var corner in roomCorners)
+        {
+            Debug.Log(corner.name + " at position: " + corner.position);
+        }
         float length = Vector2.Distance(
             new Vector2(roomCorners[0].position.x, roomCorners[0].position.z),
             new Vector2(roomCorners[1].position.x, roomCorners[1].position.z)
