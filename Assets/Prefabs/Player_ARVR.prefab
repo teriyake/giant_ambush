@@ -238,7 +238,7 @@ MonoBehaviour:
   m_raycastManager: {fileID: 0}
   m_planeManager: {fileID: 0}
   m_anchorManager: {fileID: 0}
-  m_levelPlaceholderPrefab: {fileID: 5549028673243853784, guid: 163d548adcf1e4cb39d551265b69b44d,
+  m_levelPlaceholderPrefab: {fileID: 6238245519291375976, guid: 3d9460b2040a047c2bdd24948fa9b36b,
     type: 3}
   m_levelPieceLayer:
     serializedVersion: 2

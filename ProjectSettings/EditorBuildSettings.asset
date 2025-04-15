@@ -23,9 +23,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/Tests/Relay/RelayMultiplayer.unity
     guid: 131da3eb973e2497cb9cc400bbccb1d7
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Level_1.unity
     guid: ba2484ae6d9d04fab8cef66d6320dd2d
+  - enabled: 1
+    path: Assets/Scenes/Tests/AutoLevelTest.unity
+    guid: 373af7fe14b804422bd2ed01d4a1bd30
   m_configObjects:
     Niantic.Lightship.AR.LightshipSettings: {fileID: 11400000, guid: e9a1dabd15b2b4fd48ee4c2fa4b6eadb,
       type: 2}

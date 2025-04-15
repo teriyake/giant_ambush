@@ -151,11 +151,9 @@ public class ARLevelSetup : NetworkBehaviour
     {
         if (m_levelPlaceholderPrefab == null) return;
 
-        Vector3 spawnPosition = position - rotation * new Vector3(-size.x / 2f, 0, -size.y / 2f);
-        Debug.Log($"Server received procedural level spawn request from Client {rpcParams.Receive.SenderClientId} at pos {spawnPosition}, size {size}");
+        Debug.Log($"Server received procedural level spawn request from Client {rpcParams.Receive.SenderClientId} at pos {position}, size {size}");
 
-        GameObject roomSpawnerObject = Instantiate(m_levelPlaceholderPrefab, spawnPosition, rotation);
-        roomSpawnerObject.transform.GetChild(0).gameObject.transform.position -= new Vector3(size.x * 0.5f, 0.0f, size.y * 0.5f);
+        GameObject roomSpawnerObject = Instantiate(m_levelPlaceholderPrefab, position, rotation);
 
         NetworkObject networkObject = roomSpawnerObject.GetComponent<NetworkObject>();
         if (networkObject == null)
@@ -168,17 +166,18 @@ public class ARLevelSetup : NetworkBehaviour
         networkObject.Spawn(true);
 
         Debug.Log($"Server spawned Procedural Room Spawner {networkObject.NetworkObjectId} for all clients.");
-
-        CreateRoom roomCreator = roomSpawnerObject.GetComponent<CreateRoom>();
-        if (roomCreator == null)
+        
+        NetworkedAutoLevelGenerator autoLevelGenerator = roomSpawnerObject.GetComponent<NetworkedAutoLevelGenerator>();
+        if (autoLevelGenerator == null)
         {
-            Debug.LogError("ServerRpc (RequestLevelSpawn): Spawned room spawner object is missing CreateRoom component!");
+            Debug.LogError($"ServerRpc (RequestLevelSpawn): Spawned AutoLevel object {networkObject.NetworkObjectId} is missing NetworkedAutoLevelGenerator component!");
+            networkObject.Despawn(true); 
             Destroy(roomSpawnerObject);
             return;
         }
 
-        Debug.Log($"Server: Calling CreateRoom.Generate() with size {size} on {roomSpawnerObject.name}");
-        roomCreator.ConstructRoom(size);
+        Debug.Log($"Server: Calling GenerateLevel() with size {size} * 10 on {roomSpawnerObject.name} ({networkObject.NetworkObjectId})");
+        autoLevelGenerator.GenerateLevel(size * 10); 
 
         AnchorLevelPieceClientRpc(networkObject.NetworkObjectId, position, rotation);
     }
