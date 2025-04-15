@@ -1,4 +1,0 @@
-repository "giant_ambush@teriyake@cloud"
-  path "/"
-    br "/main"
-    co "/main"

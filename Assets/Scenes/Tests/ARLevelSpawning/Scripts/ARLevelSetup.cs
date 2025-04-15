@@ -15,7 +15,7 @@ public class ARLevelSetup : NetworkBehaviour
     [SerializeField] private ARAnchorManager m_anchorManager;
 
     [Header("Level Setup")]
-    [SerializeField] private GameObject m_roomRootPrefab, m_roomSpawner;
+    [SerializeField] private GameObject m_levelPlaceholderPrefab;
     [SerializeField] private LayerMask m_levelPieceLayer; 
 
     private List<ARRaycastHit> m_raycastHits = new List<ARRaycastHit>();
@@ -51,7 +51,7 @@ public class ARLevelSetup : NetworkBehaviour
 
         if (m_raycastManager == null) Debug.LogError("ARLevelSetup: ARRaycastManager not found!", this);
         if (m_anchorManager == null) Debug.LogWarning("ARLevelSetup: ARAnchorManager not found! Anchoring will not work.", this);
-        if (m_roomRootPrefab == null) Debug.LogError("ARLevelSetup: Level Placeholder Prefab not assigned!", this);
+        if (m_levelPlaceholderPrefab == null) Debug.LogError("ARLevelSetup: Level Placeholder Prefab not assigned!", this);
 
         if (m_planeManager != null)
         {
@@ -86,7 +86,7 @@ public class ARLevelSetup : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!m_canAttemptSpawn || m_levelSpawned || m_raycastManager == null || m_roomRootPrefab == null)
+        if (!m_canAttemptSpawn || m_levelSpawned || m_raycastManager == null || m_levelPlaceholderPrefab == null)
         {
             return;
         }
@@ -129,7 +129,7 @@ public class ARLevelSetup : NetworkBehaviour
             RequestLevelSpawnServerRpc(hitPose.position, hitPose.rotation, planeSize);
 
             m_levelSpawned = true;
-            m_canAttemptSpawn = false;
+            // m_canAttemptSpawn = false;
 
             if (m_planeManager != null)
             {
@@ -149,22 +149,19 @@ public class ARLevelSetup : NetworkBehaviour
     [ServerRpc(RequireOwnership = true)]
     private void RequestLevelSpawnServerRpc(Vector3 position, Quaternion rotation, Vector2 size, ServerRpcParams rpcParams = default)
     {
-
-        if (m_roomRootPrefab == null) return;
+        if (m_levelPlaceholderPrefab == null) return;
 
         Vector3 spawnPosition = position - rotation * new Vector3(-size.x / 2f, 0, -size.y / 2f);
         Debug.Log($"Server received procedural level spawn request from Client {rpcParams.Receive.SenderClientId} at pos {spawnPosition}, size {size}");
 
-        m_roomSpawner = GameObject.FindGameObjectWithTag("RoomSpawner");
-        GameObject roomRoot = Instantiate(m_roomRootPrefab, spawnPosition, rotation);
-        roomRoot.gameObject.transform.position -= new Vector3(size.x * 0.5f, 0.0f, size.y * 0.5f);
+        GameObject roomSpawnerObject = Instantiate(m_levelPlaceholderPrefab, spawnPosition, rotation);
+        roomSpawnerObject.transform.GetChild(0).gameObject.transform.position -= new Vector3(size.x * 0.5f, 0.0f, size.y * 0.5f);
 
-
-        NetworkObject networkObject = roomRoot.GetComponent<NetworkObject>();
+        NetworkObject networkObject = roomSpawnerObject.GetComponent<NetworkObject>();
         if (networkObject == null)
         {
             Debug.LogError("ServerRpc (RequestLevelSpawn): Spawned room spawner object is missing NetworkObject component!");
-            Destroy(roomRoot);
+            Destroy(roomSpawnerObject);
             return;
         }
 
@@ -172,17 +169,16 @@ public class ARLevelSetup : NetworkBehaviour
 
         Debug.Log($"Server spawned Procedural Room Spawner {networkObject.NetworkObjectId} for all clients.");
 
-        CreateRoom roomCreator = m_roomSpawner.GetComponent<CreateRoom>();
+        CreateRoom roomCreator = roomSpawnerObject.GetComponent<CreateRoom>();
         if (roomCreator == null)
         {
             Debug.LogError("ServerRpc (RequestLevelSpawn): Spawned room spawner object is missing CreateRoom component!");
-            Destroy(roomRoot);
+            Destroy(roomSpawnerObject);
             return;
         }
 
-        Debug.Log($"Server: Calling CreateRoom.Generate() with size {size} on {m_roomSpawner.name}");
-        roomCreator.roomRoot = roomRoot;
-        roomCreator.ConstructRoom(new Vector2(200, 200));
+        Debug.Log($"Server: Calling CreateRoom.Generate() with size {size} on {roomSpawnerObject.name}");
+        roomCreator.ConstructRoom(size);
 
         AnchorLevelPieceClientRpc(networkObject.NetworkObjectId, position, rotation);
     }

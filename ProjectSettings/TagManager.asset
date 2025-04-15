@@ -9,7 +9,6 @@ TagManager:
   - EnvironmentAnchor
   - ARMeshManager
   - VRCamera
-  - RoomSpawner
   layers:
   - Default
   - TransparentFX
