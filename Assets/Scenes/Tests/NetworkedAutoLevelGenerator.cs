@@ -11,7 +11,7 @@ public class NetworkedAutoLevelGenerator : NetworkBehaviour
     [Header("AutoLevel Setup")]
     [SerializeField] private BlocksRepo m_blocksRepo;
     [SerializeField] private float m_blockSize = 1.0f;
-    [SerializeField] private int m_levelHeight = 3;
+    [SerializeField] private int m_levelHeight = 5;
     [SerializeField] private Transform m_meshRoot;
 
     private BlocksRepo.Runtime runtimeRepo;
@@ -20,6 +20,10 @@ public class NetworkedAutoLevelGenerator : NetworkBehaviour
     private BoundsInt m_generationBounds;
 
     private bool m_isAutoLevelInitialized = false;
+
+    public BoundsInt GenerationBounds => m_generationBounds;
+    public float BlockSize => m_blockSize;
+    public int LevelHeight => m_levelHeight;
 
     void Awake()
     {
@@ -112,6 +116,13 @@ public class NetworkedAutoLevelGenerator : NetworkBehaviour
             return;
         }
 
+        Transform previousRoot = transform.Find("root");
+        if (previousRoot != null)
+        {
+            Debug.Log($"NALG ({NetworkObjectId} - IsServer:{IsServer}): Destroying previous AutoLevel 'root' GameObject before rebuild.");
+            Destroy(previousRoot.gameObject);
+        }
+
         if (meshBuilder != null)
         {
             Debug.Log($"NALG ({NetworkObjectId} - IsServer:{IsServer}): Disposing previous MeshBuilder.");
@@ -125,7 +136,27 @@ public class NetworkedAutoLevelGenerator : NetworkBehaviour
         Debug.Log($"NALG ({NetworkObjectId} - IsServer:{IsServer}): Rebuilding mesh locally for bounds {localLevelData.bounds}...");
         meshBuilder.Rebuild(localLevelData.bounds);
 
-        ApplyMeshRootOffset();
+        GameObject autoLevelRootGO = GameObject.Find("root");
+        if (autoLevelRootGO != null && autoLevelRootGO.transform.parent == null)
+        {
+            Debug.Log($"NALG ({NetworkObjectId} - IsServer:{IsServer}): Found AutoLevel 'root' GO '{autoLevelRootGO.name}' at scene root. Repositioning and reparenting...");
+
+            autoLevelRootGO.transform.SetPositionAndRotation(transform.position, transform.rotation);
+            autoLevelRootGO.transform.SetParent(transform, worldPositionStays: true);
+            autoLevelRootGO.name = $"AutoLevelContent_{NetworkObjectId}";
+
+            Debug.Log($"NALG ({NetworkObjectId} - IsServer:{IsServer}): Positioned '{autoLevelRootGO.name}' at world {autoLevelRootGO.transform.position}, Parented under {transform.name}.");
+        }
+        else if (autoLevelRootGO != null && autoLevelRootGO.transform.parent != null)
+        {
+            Debug.LogWarning($"NALG ({NetworkObjectId} - IsServer:{IsServer}): Found a 'root' GO, but it was already parented to {autoLevelRootGO.transform.parent.name}. Assuming it's not the one just created by AutoLevel or was handled differently.", autoLevelRootGO);
+        }
+        else
+        {
+            Debug.LogError($"NALG ({NetworkObjectId} - IsServer:{IsServer}): Failed to find AutoLevel's generated 'root' GameObject at scene root after Rebuild! Level geometry will be at the wrong place.");
+        }
+
+        // ApplyMeshRootOffset();
         Debug.Log($"NALG ({NetworkObjectId} - IsServer:{IsServer}): Local mesh rebuild complete. Mesh root at {m_meshRoot.localPosition}");
     }
 

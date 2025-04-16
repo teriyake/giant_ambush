@@ -153,7 +153,26 @@ public class ARLevelSetup : NetworkBehaviour
 
         Debug.Log($"Server received procedural level spawn request from Client {rpcParams.Receive.SenderClientId} at pos {position}, size {size}");
 
-        GameObject roomSpawnerObject = Instantiate(m_levelPlaceholderPrefab, position, rotation);
+        NetworkedAutoLevelGenerator prefabNalg = m_levelPlaceholderPrefab.GetComponentInChildren<NetworkedAutoLevelGenerator>();
+        if (prefabNalg == null) { Debug.LogError("Prefab NALG not found!"); return; }
+        float blockSize = prefabNalg.BlockSize;
+        int levelHeight = prefabNalg.LevelHeight;
+        Vector3Int estimatedLevelSizeBlocks = new Vector3Int(Mathf.CeilToInt(size.x / blockSize) * 10, levelHeight, Mathf.CeilToInt(size.y / blockSize) * 10);
+        Vector3 initialCenterOffset = new Vector3(
+            -estimatedLevelSizeBlocks.x * blockSize * 0.5f,
+            0,
+            -estimatedLevelSizeBlocks.z * blockSize * 0.5f
+        );
+
+        Vector3 targetWorldPosition = position + rotation * initialCenterOffset;
+        Debug.Log($"ServerRpc: Calculated Target World Position: {targetWorldPosition}");
+
+        GameObject roomSpawnerObject = Instantiate(m_levelPlaceholderPrefab, Vector3.zero, Quaternion.identity);
+        Debug.Log($"ServerRpc: Instantiated '{roomSpawnerObject.name}' at origin.");
+
+        roomSpawnerObject.transform.SetPositionAndRotation(targetWorldPosition, rotation);
+        Debug.Log($"ServerRpc: Set '{roomSpawnerObject.name}' world position to: {roomSpawnerObject.transform.position} | Rotation: {roomSpawnerObject.transform.rotation.eulerAngles}");
+
 
         NetworkObject networkObject = roomSpawnerObject.GetComponent<NetworkObject>();
         if (networkObject == null)
@@ -163,23 +182,50 @@ public class ARLevelSetup : NetworkBehaviour
             return;
         }
 
-        networkObject.Spawn(true);
+        /*
+        var networkTransform = roomSpawnerObject.GetComponent<NetworkTransform>();
+        if (networkTransform != null)
+        {
+            networkTransform.SetState(targetWorldPosition, rotation, Vector3.one);
+            Debug.Log($"ServerRpc: Forced NetworkTransform state.");
+        }
+        */
 
-        Debug.Log($"Server spawned Procedural Room Spawner {networkObject.NetworkObjectId} for all clients.");
-        
+        networkObject.Spawn(true);
+        Debug.Log($"Server spawned Procedural Room Spawner {networkObject.NetworkObjectId} at pos {roomSpawnerObject.transform.position} (Initial Offset applied).");
+
         NetworkedAutoLevelGenerator autoLevelGenerator = roomSpawnerObject.GetComponent<NetworkedAutoLevelGenerator>();
         if (autoLevelGenerator == null)
         {
             Debug.LogError($"ServerRpc (RequestLevelSpawn): Spawned AutoLevel object {networkObject.NetworkObjectId} is missing NetworkedAutoLevelGenerator component!");
-            networkObject.Despawn(true); 
+            networkObject.Despawn(true);
             Destroy(roomSpawnerObject);
             return;
         }
 
         Debug.Log($"Server: Calling GenerateLevel() with size {size} * 10 on {roomSpawnerObject.name} ({networkObject.NetworkObjectId})");
-        autoLevelGenerator.GenerateLevel(size * 10); 
+        autoLevelGenerator.GenerateLevel(size * 10);
 
-        AnchorLevelPieceClientRpc(networkObject.NetworkObjectId, position, rotation);
+        GameObject autoLevelRootGO = GameObject.Find("root");
+        if (autoLevelRootGO != null && autoLevelRootGO.transform.parent == null)
+        {
+            Debug.Log($"ServerRpc: Found AutoLevel 'root' GO '{autoLevelRootGO.name}' at scene root.");
+            autoLevelRootGO.transform.SetPositionAndRotation(targetWorldPosition, rotation);
+            Debug.Log($"ServerRpc: Set '{autoLevelRootGO.name}' position to {autoLevelRootGO.transform.position}");
+            autoLevelRootGO.transform.SetParent(roomSpawnerObject.transform, worldPositionStays: true);
+            autoLevelRootGO.name = $"AutoLevelContent_{networkObject.NetworkObjectId}";
+            Debug.Log($"ServerRpc: Parented '{autoLevelRootGO.name}' under '{roomSpawnerObject.name}'. Parent Pos: {roomSpawnerObject.transform.position}, Child World Pos: {autoLevelRootGO.transform.position}");
+        }
+        else
+        {
+            Debug.LogError("ServerRpc (RequestLevelSpawn): Could not find AutoLevel 'root' GameObject!");
+        }
+
+        if (networkObject != null && roomSpawnerObject != null)
+        {
+            Debug.Log($"ServerRpc: Calling AnchorLevelPieceClientRpc for NO:{networkObject.NetworkObjectId} at Position:{targetWorldPosition}");
+            AnchorLevelPieceClientRpc(networkObject.NetworkObjectId, targetWorldPosition, rotation);
+        }
     }
 
     private void LogPlaneDetails(ARRaycastHit arHit)

@@ -20,7 +20,7 @@ namespace AutoLevel
         private TileGroup[,,] groups;
 
         public LevelMeshBuilder(LevelData levelData,
-        BlocksRepo.Runtime blockRepo, int tilesPerGroup = 5) : base(levelData, blockRepo)
+        BlocksRepo.Runtime blockRepo, int tilesPerGroup = 5, Transform extRoot = null) : base(levelData, blockRepo, extRoot)
         {
             this.tilesPerGroup = tilesPerGroup;
             var groupsSize = Vector3Int.CeilToInt(new Vector3(

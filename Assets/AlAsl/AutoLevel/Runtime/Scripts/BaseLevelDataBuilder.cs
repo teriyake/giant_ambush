@@ -12,11 +12,12 @@ namespace AutoLevel
         protected BlocksRepo.Runtime repo;
 
         protected BaseLevelDataBuilder(LevelData levelData,
-        BlocksRepo.Runtime blockRepo)
+        BlocksRepo.Runtime blockRepo, Transform extRoot = null)
         {
             this.repo = blockRepo;
             this.levelData = levelData;
-            root = new GameObject("root").transform;
+            //root = new GameObject("root").transform;
+            this.root = extRoot != null ? extRoot : new GameObject("root").transform;
         }
 
         public void Rebuild() => Rebuild(new BoundsInt(Vector3Int.zero, levelData.Blocks.Size));
