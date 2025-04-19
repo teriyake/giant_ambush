@@ -1,54 +1,83 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Components;
+using UnityEngine;
 
 [RequireComponent(typeof(NetworkObject))]
+[RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : NetworkBehaviour
 {
     [Header("Tracking Target")]
     [Tooltip("If null, will attempt to use Camera.main")]
-    [HideInInspector] public Transform m_cameraToTrack;
+    [HideInInspector]
+    public Transform m_cameraToTrack;
 
-    private Transform m_playerObjectTransform;
-    private bool m_isTracking = false;
+    private Rigidbody m_rigidbody;
     private NetworkTransform m_networkTransform;
+
+    private Vector3 serverTargetPosition;
+    private Quaternion serverTargetRotation;
+    private bool receivedNewTarget = false;
 
     public override void OnNetworkSpawn()
     {
-        m_playerObjectTransform = transform;
+        m_rigidbody = GetComponent<Rigidbody>();
+        if (m_rigidbody == null)
+        {
+            Debug.LogError($"PlayerMovement {OwnerClientId}: Rigidbody component not found!", this);
+            enabled = false;
+            return;
+        }
 
         if (IsOwner)
         {
-            if (PlatformRoleManager.Instance != null && PlatformRoleManager.Instance.IsPlatformReady)
+            m_rigidbody.isKinematic = true;
+
+            if (
+                PlatformRoleManager.Instance != null
+                && PlatformRoleManager.Instance.IsPlatformReady
+            )
             {
-                Debug.Log($"PlayerMovement (Owner: {OwnerClientId}): Platform already ready. Initializing camera tracking.");
+                Debug.Log(
+                    $"PlayerMovement (Owner: {OwnerClientId}): Platform already ready. Initializing camera tracking."
+                );
                 InitializeCameraTracking();
             }
             else if (PlatformRoleManager.Instance != null)
             {
-                Debug.Log($"PlayerMovement (Owner: {OwnerClientId}): Platform not ready yet. Subscribing to OnPlatformReady event.");
+                Debug.Log(
+                    $"PlayerMovement (Owner: {OwnerClientId}): Platform not ready yet. Subscribing to OnPlatformReady event."
+                );
                 PlatformRoleManager.Instance.OnPlatformReady += InitializeCameraTracking;
             }
             else
             {
-                Debug.LogError($"PlayerMovement (Owner: {OwnerClientId}): PlatformRoleManager Instance not found on spawn!", this);
-                m_isTracking = false;
+                Debug.LogError(
+                    $"PlayerMovement (Owner: {OwnerClientId}): PlatformRoleManager Instance not found on spawn!",
+                    this
+                );
             }
-
-            m_networkTransform = GetComponent<NetworkTransform>();
-        } 
-        else 
+        }
+        else
         {
-            Debug.Log($"PlayerMovementTracker (Remote: {OwnerClientId}): This is a remote player avatar. Position will be updated by NetworkTransform.");
-            m_isTracking = false;
+            m_rigidbody.isKinematic = !IsServer;
+            Debug.Log(
+                $"PlayerMovement (Remote/Server: {OwnerClientId}, IsServer: {IsServer}): Rigidbody IsKinematic set to {!IsServer}"
+            );
+        }
+
+        if (IsServer)
+        {
+            serverTargetPosition = transform.position;
+            serverTargetRotation = transform.rotation;
         }
     }
 
     private void InitializeCameraTracking()
     {
-        if (!IsOwner || m_isTracking) return;
+        if (!IsOwner)
+            return;
 
         if (m_cameraToTrack == null)
         {
@@ -56,19 +85,23 @@ public class PlayerMovement : NetworkBehaviour
             if (mainCam != null)
             {
                 m_cameraToTrack = mainCam.transform;
-                Debug.Log($"PlayerMovementTracker (Owner: {OwnerClientId}): Found and tracking Camera.main: {m_cameraToTrack.gameObject.name}");
-                m_isTracking = true;
+                Debug.Log(
+                    $"PlayerMovementTracker (Owner: {OwnerClientId}): Found and tracking Camera.main: {m_cameraToTrack.gameObject.name}"
+                );
             }
             else
             {
-                Debug.LogError($"PlayerMovementTracker (Owner: {OwnerClientId}): Could not find main camera to track! Avatar will not follow device movement.", this);
-                m_isTracking = false;
+                Debug.LogError(
+                    $"PlayerMovementTracker (Owner: {OwnerClientId}): Could not find main camera to track! Avatar will not follow device movement.",
+                    this
+                );
             }
-        } 
-        else 
+        }
+        else
         {
-            Debug.Log($"PlayerMovementTracker (Owner: {OwnerClientId}): Tracking pre-assigned camera: {m_cameraToTrack.gameObject.name}");
-            m_isTracking = true;
+            Debug.Log(
+                $"PlayerMovementTracker (Owner: {OwnerClientId}): Tracking pre-assigned camera: {m_cameraToTrack.gameObject.name}"
+            );
         }
     }
 
@@ -81,34 +114,52 @@ public class PlayerMovement : NetworkBehaviour
         base.OnNetworkDespawn();
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
     void Update()
     {
-        if (!IsOwner || !m_isTracking || m_cameraToTrack == null)
+        if (!IsOwner || m_cameraToTrack == null)
         {
             return;
         }
 
-        Vector3 currentCamPos = m_cameraToTrack.transform.position;
-        Quaternion currentCamRot = m_cameraToTrack.transform.rotation;
+        Vector3 currentCamPos = m_cameraToTrack.position;
+        Quaternion currentCamRot = m_cameraToTrack.rotation;
 
-        UpdateServerPositionServerRpc(currentCamPos, currentCamRot);
+        UpdateServerTargetStateServerRpc(currentCamPos, currentCamRot);
     }
 
     [ServerRpc]
-    private void UpdateServerPositionServerRpc(Vector3 position, Quaternion rotation, ServerRpcParams rpcParams = default)
+    private void UpdateServerTargetStateServerRpc(
+        Vector3 targetPosition,
+        Quaternion targetRotation,
+        ServerRpcParams rpcParams = default
+    )
     {
-        transform.position = position;
-        transform.rotation = rotation;
+        serverTargetPosition = targetPosition;
+        serverTargetRotation = targetRotation;
+        receivedNewTarget = true;
+    }
 
-        // Debug.Log($"Server Received Pose from Client {rpcParams.Receive.SenderClientId}: Applying Pos={position}, Rot={rotation.eulerAngles} to NetworkObject {NetworkObjectId}");
+    void FixedUpdate()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
 
+        if (receivedNewTarget)
+        {
+            m_rigidbody.MovePosition(serverTargetPosition);
+            m_rigidbody.MoveRotation(serverTargetRotation);
+
+            // Debug.Log($"Server FixedUpdate: Moving Rigidbody for {OwnerClientId} towards Pos: {serverTargetPosition}");
+
+            receivedNewTarget = false;
+        }
+
+        // Vector3 newPos = Vector3.MoveTowards(m_rigidbody.position, serverTargetPosition, Time.fixedDeltaTime * moveSpeed); // Define moveSpeed
+        // Quaternion newRot = Quaternion.RotateTowards(m_rigidbody.rotation, serverTargetRotation, Time.fixedDeltaTime * rotationSpeed); // Define rotationSpeed
+        // m_rigidbody.MovePosition(newPos);
+        // m_rigidbody.MoveRotation(newRot);
     }
 
     public override void OnDestroy()
