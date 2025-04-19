@@ -1,29 +1,44 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
+using System.Threading.Tasks;
+using TMPro;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
-using TMPro;
-using Unity.Services.Core;
 using Unity.Services.Authentication;
+using Unity.Services.Core;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
-using System.Threading.Tasks;
+using UnityEngine;
+using UnityEngine.UI;
 
 public class NetworkUIHandlerRelay : MonoBehaviour
 {
     [Header("UI Elements")]
-    [SerializeField] private Button m_hostButton;
-    [SerializeField] private Button m_clientButton;
-    [SerializeField] private TMP_InputField m_joinCodeInput; 
-    [SerializeField] private TextMeshProUGUI m_joinCodeText;
-    [SerializeField] private TextMeshProUGUI m_statusText;
+    [SerializeField]
+    private Button m_hostButton;
+
+    [SerializeField]
+    private Button m_clientButton;
+
+    [SerializeField]
+    private TMP_InputField m_joinCodeInput;
+
+    [SerializeField]
+    private TextMeshProUGUI m_joinCodeText;
+
+    [SerializeField]
+    private TextMeshProUGUI m_statusText;
 
     [Header("References")]
-    [SerializeField] private PlatformRoleManager m_platformRoleManager;
+    [SerializeField]
+    private PlatformRoleManager m_platformRoleManager;
+
+    [Header("Prefabs")]
+    [SerializeField]
+    private GameObject m_gameManagerPrefab;
 
     private string _joinCode;
+    private bool _gameManagerSpawned = false;
 
     async void Start()
     {
@@ -60,14 +75,18 @@ public class NetworkUIHandlerRelay : MonoBehaviour
             {
                 SetStatus("Authenticating (Anonymous)...");
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                Debug.Log($"Player authenticated with ID: {AuthenticationService.Instance.PlayerId}");
+                Debug.Log(
+                    $"Player authenticated with ID: {AuthenticationService.Instance.PlayerId}"
+                );
             }
             else
             {
-                Debug.Log($"Player already authenticated with ID: {AuthenticationService.Instance.PlayerId}");
+                Debug.Log(
+                    $"Player already authenticated with ID: {AuthenticationService.Instance.PlayerId}"
+                );
             }
             SetStatus("Ready.");
-            m_hostButton.interactable = true; 
+            m_hostButton.interactable = true;
             m_clientButton.interactable = true;
         }
         catch (System.Exception e)
@@ -87,7 +106,9 @@ public class NetworkUIHandlerRelay : MonoBehaviour
 
         try
         {
-            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections: 1);
+            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(
+                maxConnections: 1
+            );
 
             _joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
             Debug.Log($"Host: Relay Join Code: {_joinCode}");
@@ -111,7 +132,8 @@ public class NetworkUIHandlerRelay : MonoBehaviour
                 allocation.ConnectionData
             );
 
-            if (m_platformRoleManager != null) m_platformRoleManager.SetupForRole(true);
+            if (m_platformRoleManager != null)
+                m_platformRoleManager.SetupForRole(true);
 
             Debug.Log("Starting Host...");
             NetworkManager.Singleton.StartHost();
@@ -144,7 +166,9 @@ public class NetworkUIHandlerRelay : MonoBehaviour
 
         try
         {
-            JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
+            JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(
+                joinCode
+            );
 
             UnityTransport transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
             if (transport == null)
@@ -165,7 +189,8 @@ public class NetworkUIHandlerRelay : MonoBehaviour
                 joinAllocation.HostConnectionData
             );
 
-            if (m_platformRoleManager != null) m_platformRoleManager.SetupForRole(false);
+            if (m_platformRoleManager != null)
+                m_platformRoleManager.SetupForRole(false);
 
             Debug.Log($"Attempting to connect to Host via Relay Join Code: {joinCode}");
             NetworkManager.Singleton.StartClient();
@@ -186,7 +211,7 @@ public class NetworkUIHandlerRelay : MonoBehaviour
         m_hostButton.gameObject.SetActive(false);
         m_clientButton.gameObject.SetActive(false);
         m_joinCodeInput.gameObject.SetActive(false);
-        if (!NetworkManager.Singleton.IsHost) 
+        if (!NetworkManager.Singleton.IsHost)
         {
             m_joinCodeText.gameObject.SetActive(false);
         }
@@ -206,22 +231,61 @@ public class NetworkUIHandlerRelay : MonoBehaviour
         RoleManager.VRClientId = NetworkManager.Singleton.LocalClientId;
         Debug.Log($"Host started. Assigned VR Giant role to Client ID: {RoleManager.VRClientId}");
         SetStatus($"Host active. Waiting for client... Join Code: {_joinCode}");
+
+        if (!_gameManagerSpawned)
+        {
+            if (m_gameManagerPrefab != null)
+            {
+                Debug.Log("Spawning GameManager...");
+                GameObject gmInstance = Instantiate(m_gameManagerPrefab);
+                NetworkObject networkObject = gmInstance.GetComponent<NetworkObject>();
+                if (networkObject != null)
+                {
+                    networkObject.Spawn(true);
+                    _gameManagerSpawned = true;
+                    Debug.Log("GameManager spawned successfully.");
+                }
+                else
+                {
+                    Debug.LogError(
+                        "GameManager prefab is missing NetworkObject component!",
+                        m_gameManagerPrefab
+                    );
+                    Destroy(gmInstance);
+                    SetStatus("Error: GameManager prefab invalid.");
+                }
+            }
+            else
+            {
+                Debug.LogError(
+                    "GameManager Prefab is not assigned in NetworkUIHandlerRelay!",
+                    this
+                );
+                SetStatus("Error: GameManager prefab missing.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("HandleServerStarted called but GameManager already spawned.");
+        }
     }
 
     void OnClientConnected(ulong clientId)
     {
-        if (!NetworkManager.Singleton.IsHost) 
+        if (!NetworkManager.Singleton.IsHost)
         {
             if (RoleManager.AntClientId == ulong.MaxValue)
             {
-                RoleManager.AntClientId = NetworkManager.Singleton.LocalClientId; 
-                Debug.Log($"Client connected to Host. Assigned Ant role to myself (Client ID: {clientId})");
+                RoleManager.AntClientId = NetworkManager.Singleton.LocalClientId;
+                Debug.Log(
+                    $"Client connected to Host. Assigned Ant role to myself (Client ID: {clientId})"
+                );
                 SetStatus("Connected to host.");
             }
         }
-        else 
+        else
         {
-            if (clientId != NetworkManager.Singleton.LocalClientId) 
+            if (clientId != NetworkManager.Singleton.LocalClientId)
             {
                 if (RoleManager.AntClientId == ulong.MaxValue)
                 {
@@ -253,12 +317,12 @@ public class NetworkUIHandlerRelay : MonoBehaviour
 
         if (NetworkManager.Singleton.IsHost)
         {
-             SetStatus($"Client {clientId} disconnected. Waiting for client...");
+            SetStatus($"Client {clientId} disconnected. Waiting for client...");
         }
-        else if (clientId == NetworkManager.ServerClientId) 
+        else if (clientId == NetworkManager.ServerClientId)
         {
-             SetStatus("Disconnected from host.");
-             // ShowInputUI();
+            SetStatus("Disconnected from host.");
+            // ShowInputUI();
         }
     }
 
@@ -275,11 +339,11 @@ public class NetworkUIHandlerRelay : MonoBehaviour
 
     void OnDestroy()
     {
-         if (NetworkManager.Singleton != null)
-         {
+        if (NetworkManager.Singleton != null)
+        {
             NetworkManager.Singleton.OnServerStarted -= OnServerStarted;
             NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
             NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
-         }
+        }
     }
 }
