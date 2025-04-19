@@ -203,8 +203,8 @@ public class ARLevelSetup : NetworkBehaviour
             return;
         }
 
-        Debug.Log($"Server: Calling GenerateLevel() with size {size} * 10 on {roomSpawnerObject.name} ({networkObject.NetworkObjectId})");
-        autoLevelGenerator.GenerateLevel(size * 10);
+        Debug.Log($"Server: Calling GenerateLevel() with size {size} * 7 on {roomSpawnerObject.name} ({networkObject.NetworkObjectId})");
+        autoLevelGenerator.GenerateLevel(size * 7);
 
         GameObject autoLevelRootGO = GameObject.Find("root");
         if (autoLevelRootGO != null && autoLevelRootGO.transform.parent == null)
@@ -215,10 +215,6 @@ public class ARLevelSetup : NetworkBehaviour
             autoLevelRootGO.transform.SetParent(roomSpawnerObject.transform, worldPositionStays: true);
             autoLevelRootGO.name = $"AutoLevelContent_{networkObject.NetworkObjectId}";
             Debug.Log($"ServerRpc: Parented '{autoLevelRootGO.name}' under '{roomSpawnerObject.name}'. Parent Pos: {roomSpawnerObject.transform.position}, Child World Pos: {autoLevelRootGO.transform.position}");
-        }
-        else
-        {
-            Debug.LogError("ServerRpc (RequestLevelSpawn): Could not find AutoLevel 'root' GameObject!");
         }
 
         if (networkObject != null && roomSpawnerObject != null)
