@@ -78,11 +78,11 @@ public class GameHUD : MonoBehaviour
                     && RoleManager.IsClientAnt(NetworkManager.Singleton.LocalClientId)
                 )
                 {
-                    statusText.text = "Scan your play area!";
+                    statusText.text = "Scan your play area to spawn the level.";
                 }
                 else
                 {
-                    statusText.text = "Waiting for Ant to scan...";
+                    statusText.text = "Waiting for Giant to scan...";
                 }
                 break;
             case GamePhase.LevelReady:
@@ -98,7 +98,7 @@ public class GameHUD : MonoBehaviour
                     && RoleManager.IsClientAnt(NetworkManager.Singleton.LocalClientId)
                 )
                 {
-                    statusText.text = "Evade the Giant!";
+                    statusText.text = "Catch the Ant!";
                 }
                 else if (
                     NetworkManager.Singleton != null
@@ -106,7 +106,7 @@ public class GameHUD : MonoBehaviour
                     && RoleManager.IsClientVR(NetworkManager.Singleton.LocalClientId)
                 )
                 {
-                    statusText.text = "Catch the Ant!";
+                    statusText.text = "Evade the Giant!";
                 }
                 else
                 {
@@ -136,11 +136,11 @@ public class GameHUD : MonoBehaviour
         winnerText.gameObject.SetActive(true);
         if (winnerClientId == RoleManager.VRClientId)
         {
-            winnerText.text = "Giant Wins!";
+            winnerText.text = "Ant Wins!";
         }
         else if (winnerClientId == RoleManager.AntClientId)
         {
-            winnerText.text = "Ant Wins!";
+            winnerText.text = "Giant Wins!";
         }
         else
         {
