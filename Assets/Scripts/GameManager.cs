@@ -276,11 +276,19 @@ public class GameManager : NetworkBehaviour
             && vrClient.PlayerObject != null
         )
         {
-            Debug.Log(
-                $"GameManager: Moving VR Player (Client {RoleManager.VRClientId}, GO: {vrClient.PlayerObject.name}) to spawn point."
-            );
-            vrClient.PlayerObject.transform.position = _vrPlayerSpawnPoint.position;
-            vrClient.PlayerObject.transform.rotation = _vrPlayerSpawnPoint.rotation;
+            GameObject VROriginGO = GameObject.FindGameObjectsWithTag("VROrigin")[0];
+            if (VROriginGO != null)
+            {
+                Debug.Log(
+                    $"GameManager: Moving VR Player (Client {RoleManager.VRClientId}, VR Origin: {VROriginGO.name}) to spawn point."
+                );
+                VROriginGO.transform.position = _vrPlayerSpawnPoint.position;
+                VROriginGO.transform.rotation = _vrPlayerSpawnPoint.rotation;
+            }
+            else
+            {
+                Debug.LogError("GameManager: Could not find VR Origin!");
+            }
         }
         else
         {
@@ -368,7 +376,7 @@ public class GameManager : NetworkBehaviour
             if (distance <= captureDistance)
             {
                 Debug.Log($"GameManager: Capture condition met! Distance: {distance}. Giant wins.");
-                EndGame(RoleManager.VRClientId);
+                EndGame(RoleManager.AntClientId);
             }
         }
         else
@@ -381,7 +389,7 @@ public class GameManager : NetworkBehaviour
     public void RequestCaptureAttemptServerRpc(ServerRpcParams rpcParams = default)
     {
         ulong requestingClientId = rpcParams.Receive.SenderClientId;
-        if (requestingClientId == RoleManager.VRClientId)
+        if (requestingClientId == RoleManager.AntClientId)
         {
             Debug.Log(
                 $"GameManager: Received capture attempt request from Giant (Client {requestingClientId}). Proximity check runs in Update."
