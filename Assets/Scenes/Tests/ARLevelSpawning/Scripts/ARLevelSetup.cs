@@ -203,8 +203,8 @@ public class ARLevelSetup : NetworkBehaviour
             return;
         }
 
-        Debug.Log($"Server: Calling GenerateLevel() with size {size} * 7 on {roomSpawnerObject.name} ({networkObject.NetworkObjectId})");
-        autoLevelGenerator.GenerateLevel(size * 7);
+        Debug.Log($"Server: Calling GenerateLevel() with size {size} * 10 on {roomSpawnerObject.name} ({networkObject.NetworkObjectId})");
+        autoLevelGenerator.GenerateLevel(size * 10);
 
         GameObject autoLevelRootGO = GameObject.Find("root");
         if (autoLevelRootGO != null && autoLevelRootGO.transform.parent == null)
