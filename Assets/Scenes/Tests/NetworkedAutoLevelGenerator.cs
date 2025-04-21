@@ -132,7 +132,7 @@ public class NetworkedAutoLevelGenerator : NetworkBehaviour
         serverSolver.SetGroupBoundary(BlocksRepo.SOLID_GROUP, Direction.Down);
 
         Debug.Log($"NALG (Server {NetworkObjectId}): Starting Solver...");
-        int iterations = serverSolver.Solve(m_generationBounds, 10);
+        int iterations = serverSolver.Solve(m_generationBounds, 10, 42);
 
         if (iterations > 0)
         {
