@@ -867,7 +867,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 1073741943
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -1922,6 +1922,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_BackGroundColor.r
       value: 0.21000001
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795066115803801811, guid: dd36fc4764caf8a47ab851a1f436feca,
+        type: 3}
+      propertyPath: m_CullingMask.m_Bits
+      value: 1073742007
       objectReference: {fileID: 0}
     - target: {fileID: 4795066116272624333, guid: dd36fc4764caf8a47ab851a1f436feca,
         type: 3}
