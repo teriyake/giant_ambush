@@ -183,7 +183,7 @@ public class ARLevelSetup : NetworkBehaviour
         AnchorLevelPieceClientRpc(networkObject.NetworkObjectId, position, rotation);
 
         GameObject VROriginGO = GameObject.FindGameObjectsWithTag("VROrigin")[0];
-        if (VROriginGO != null) { VROriginGO.transform.localScale = Vector3.one * 0.2f; }
+        
     }
 
 

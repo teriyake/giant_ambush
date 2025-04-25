@@ -25,6 +25,8 @@ public class PlayerAppearance : NetworkBehaviour
     {
         if (m_objectRenderer == null) return;
 
+        if (IsOwner) m_objectRenderer.enabled = false;
+
         if (OwnerClientId == NetworkManager.ServerClientId)
         {
             Debug.Log($"NetworkObject {NetworkObjectId} belongs to Host (ClientId {OwnerClientId}). Applying Host Material.");
