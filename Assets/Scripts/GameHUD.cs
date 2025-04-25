@@ -65,7 +65,7 @@ public class GameHUD : MonoBehaviour
     {
         if (statusText == null)
             return;
-            
+
         switch (phase)
         {
             case GamePhase.WaitingForPlayers:
@@ -75,7 +75,7 @@ public class GameHUD : MonoBehaviour
                 if (
                     NetworkManager.Singleton != null
                     && NetworkManager.Singleton.IsConnectedClient
-                    && RoleManager.IsClientAnt(NetworkManager.Singleton.LocalClientId)
+                    && RoleManager.IsClientAR(NetworkManager.Singleton.LocalClientId)
                 )
                 {
                     statusText.text = "Scan your play area to spawn the level.";
@@ -95,7 +95,7 @@ public class GameHUD : MonoBehaviour
                 if (
                     NetworkManager.Singleton != null
                     && NetworkManager.Singleton.IsConnectedClient
-                    && RoleManager.IsClientAnt(NetworkManager.Singleton.LocalClientId)
+                    && RoleManager.IsClientAR(NetworkManager.Singleton.LocalClientId)
                 )
                 {
                     statusText.text = "Catch the Ant!";
@@ -134,11 +134,11 @@ public class GameHUD : MonoBehaviour
         }
 
         winnerText.gameObject.SetActive(true);
-        if (winnerClientId == RoleManager.VRClientId)
+        if (winnerClientId == GameManager.Instance.VRClientId.Value)
         {
             winnerText.text = "Ant Wins!";
         }
-        else if (winnerClientId == RoleManager.AntClientId)
+        else if (winnerClientId == GameManager.Instance.ARClientId.Value)
         {
             winnerText.text = "Giant Wins!";
         }

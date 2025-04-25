@@ -11,6 +11,7 @@ public class PlayerAppearance : NetworkBehaviour
 
     private Renderer m_objectRenderer;
 
+
     void Awake()
     {
         m_objectRenderer = GetComponentInChildren<Renderer>();

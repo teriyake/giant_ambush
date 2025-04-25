@@ -15,6 +15,7 @@ public class CreateRoom : MonoBehaviour
     Vector2 roomSize;
 
     void Start(){
+        /*
         GameObject roomPrefab = roomPrefabs[Random.Range(0, roomPrefabs.Length)];
         collider = GetComponent<BoxCollider>();
         for (int i=0;i<roomPrefab.transform.childCount;i++){
@@ -26,8 +27,9 @@ public class CreateRoom : MonoBehaviour
                 roomObjects.Add(obj);
             }  
         }
+        */
 
-        ConstructRoom(new Vector2(20, 20)); 
+        // ConstructRoom(new Vector2(20, 20)); 
     }
 
     bool isInBounds(GameObject obj, Bounds bounds){
@@ -47,10 +49,38 @@ public class CreateRoom : MonoBehaviour
 
     public void ConstructRoom(Vector2 size)
     {
-        roomSize = CalculateRoomSize();
+        GameObject roomPrefab = roomPrefabs[Random.Range(0, roomPrefabs.Length)];
+        collider = GetComponent<BoxCollider>();
+        for (int i = 0; i < roomPrefab.transform.childCount; i++)
+        {
+            GameObject obj = roomPrefab.transform.GetChild(i).gameObject;
+            if (obj.name.Contains("Corner"))
+            {
+                roomCorners.Add(obj.transform);
+            }
+            else if (!obj.name.Contains("Wall"))
+            {
+                roomObjects.Add(obj);
+            }
+        }
+        Debug.Log($"========={roomCorners.Count}");
+        float x0 = roomCorners[0].position.x;
+        float z0 = roomCorners[0].position.z;
+        float x1 = roomCorners[1].position.x;
+        float z1 = roomCorners[1].position.z;
+
+        float length = Mathf.Sqrt(Mathf.Pow(x1 - x0, 2) + Mathf.Pow(z1 - z0, 2));
+
+
+        float x2 = roomCorners[2].position.x;
+        float z2 = roomCorners[2].position.z;
+
+        float breadth = Mathf.Sqrt(Mathf.Pow(x2 - x1, 2) + Mathf.Pow(z2 - z1, 2));
+        
+        roomSize = new Vector2(length, breadth);
         Vector2 rmdr = new Vector2(size.x % roomSize.x, size.y % roomSize.y);
 
-        Debug.Log("Room Size: " + roomSize);
+        Debug.Log("Room Size: " + size);
         Debug.Log("Rmdr: " + rmdr); 
 
         HashSet<GameObject> xSet = new HashSet<GameObject>();

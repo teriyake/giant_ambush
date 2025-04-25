@@ -16,7 +16,6 @@ GameObject:
   - component: {fileID: 8960524533174161986}
   - component: {fileID: -6200053511787447056}
   - component: {fileID: -8816772605445369397}
-  - component: {fileID: 4306071446420290491}
   - component: {fileID: 1631736293786552838}
   - component: {fileID: -9174143602540099461}
   - component: {fileID: 7562677049364688529}
@@ -186,7 +185,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1618725237159975800}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7ddfcb474d14740aab7a5d2896fdebb9, type: 3}
   m_Name: 
@@ -196,21 +195,6 @@ MonoBehaviour:
     m_Bits: 4294967295
   m_maxInteractionDistance: 50
   m_playerCamera: {fileID: 0}
---- !u!114 &4306071446420290491
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1618725237159975800}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: efe242216adc2433d9c218dbd202c2d3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_objectToSpawnPrefab: {fileID: 3236484819917392351, guid: 26a6ccb07fe8d4949b94ee4d5cd938ec,
-    type: 3}
-  m_raycastManager: {fileID: 0}
 --- !u!114 &1631736293786552838
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -239,7 +223,7 @@ MonoBehaviour:
   m_raycastManager: {fileID: 0}
   m_planeManager: {fileID: 0}
   m_anchorManager: {fileID: 0}
-  m_levelPlaceholderPrefab: {fileID: 6238245519291375976, guid: 3d9460b2040a047c2bdd24948fa9b36b,
+  m_levelPlaceholderPrefab: {fileID: 5549028673243853784, guid: 163d548adcf1e4cb39d551265b69b44d,
     type: 3}
   m_levelPieceLayer:
     serializedVersion: 2

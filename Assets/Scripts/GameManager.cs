@@ -25,20 +25,22 @@ public class GameManager : NetworkBehaviour
     [SerializeField]
     private float countdownDuration = 5f;
 
-    [SerializeField]
-    private float captureDistance = 2.0f;
-
     // [SerializeField] private float captureHoldTime = 3.0f;
 
     [Header("References")]
     [SerializeField]
     private GameObject playerPrefab;
 
+    private GameObject VROriginGO;
+
+
     public NetworkVariable<GamePhase> CurrentPhase = new NetworkVariable<GamePhase>(
         GamePhase.WaitingForPlayers
     );
     public NetworkVariable<float> RoundTimer = new NetworkVariable<float>(0f);
     public NetworkVariable<ulong> WinnerClientId = new NetworkVariable<ulong>(ulong.MaxValue);
+    public NetworkVariable<ulong> VRClientId = new NetworkVariable<ulong>(ulong.MaxValue);
+    public NetworkVariable<ulong> ARClientId = new NetworkVariable<ulong>(ulong.MaxValue);
     private NetworkedAutoLevelGenerator _levelGeneratorInstance;
     private Transform _vrPlayerSpawnPoint;
     private bool _levelGenerated = false;
@@ -210,6 +212,15 @@ public class GameManager : NetworkBehaviour
         {
             Debug.Log("GameManager: Both players connected. Transitioning to Setup phase.");
             CurrentPhase.Value = GamePhase.Setup;
+
+            if (_levelGenerated)
+            {
+                Debug.Log(
+                    "GameManager [Server]: Level was generated before both players connected. Proceeding to LevelReady and starting countdown now."
+                );
+                CurrentPhase.Value = GamePhase.LevelReady;
+                StartCoroutine(StartGameCountdown());
+            }
         }
     }
 
@@ -255,6 +266,7 @@ public class GameManager : NetworkBehaviour
             _vrPlayerSpawnPoint = new GameObject("VRSpawnPoint_Helper").transform;
         }
         _vrPlayerSpawnPoint.position = worldSpawnPosition;
+        _vrPlayerSpawnPoint.position += new Vector3(0.0f, 0.5f, 0.0f);
         _vrPlayerSpawnPoint.rotation = generatorTransform.rotation;
 
         Debug.Log(
@@ -267,10 +279,12 @@ public class GameManager : NetworkBehaviour
         if (!IsServer || _vrPlayerSpawnPoint == null)
             return;
 
+        ulong vrClientId = GameManager.Instance.VRClientId.Value;
+
         if (
-            RoleManager.VRClientId != ulong.MaxValue
+            vrClientId != ulong.MaxValue
             && NetworkManager.Singleton.ConnectedClients.TryGetValue(
-                RoleManager.VRClientId,
+                vrClientId,
                 out NetworkClient vrClient
             )
             && vrClient.PlayerObject != null
@@ -283,7 +297,7 @@ public class GameManager : NetworkBehaviour
                     $"GameManager: Moving VR Player (Client {RoleManager.VRClientId}, VR Origin: {VROriginGO.name}) to spawn point."
                 );
                 VROriginGO.transform.position = _vrPlayerSpawnPoint.position;
-                VROriginGO.transform.rotation = _vrPlayerSpawnPoint.rotation;
+                // VROriginGO.transform.rotation = _vrPlayerSpawnPoint.rotation;
             }
             else
             {
@@ -292,7 +306,9 @@ public class GameManager : NetworkBehaviour
         }
         else
         {
-            Debug.LogError("GameManager: Could not find VR player object to move to spawn point!");
+            Debug.LogError(
+                $"GameManager: Could not find VR player object (Client ID: {vrClientId}) or PlayerObject is null to move to spawn point!"
+            );
         }
     }
 
@@ -334,12 +350,10 @@ public class GameManager : NetworkBehaviour
             case GamePhase.Playing:
                 RoundTimer.Value -= Time.deltaTime;
 
-                CheckForCapture();
-
                 if (RoundTimer.Value <= 0)
                 {
                     Debug.Log("GameManager: Timer expired. Ant wins.");
-                    EndGame(RoleManager.AntClientId);
+                    EndGame(RoleManager.ARClientId);
                 }
                 break;
             case GamePhase.GameOver:
@@ -347,59 +361,89 @@ public class GameManager : NetworkBehaviour
         }
     }
 
-    private void CheckForCapture()
-    {
-        if (!IsServer || CurrentPhase.Value != GamePhase.Playing)
-            return;
-
-        if (RoleManager.VRClientId == ulong.MaxValue || RoleManager.AntClientId == ulong.MaxValue)
-            return;
-
-        if (
-            NetworkManager.Singleton.ConnectedClients.TryGetValue(
-                RoleManager.VRClientId,
-                out NetworkClient vrClient
-            )
-            && NetworkManager.Singleton.ConnectedClients.TryGetValue(
-                RoleManager.AntClientId,
-                out NetworkClient antClient
-            )
-            && vrClient.PlayerObject != null
-            && antClient.PlayerObject != null
-        )
-        {
-            float distance = Vector3.Distance(
-                vrClient.PlayerObject.transform.position,
-                antClient.PlayerObject.transform.position
-            );
-
-            if (distance <= captureDistance)
-            {
-                Debug.Log($"GameManager: Capture condition met! Distance: {distance}. Giant wins.");
-                EndGame(RoleManager.AntClientId);
-            }
-        }
-        else
-        {
-            Debug.LogWarning("GameManager: Could not find player objects for capture check.");
-        }
-    }
+    private void CheckForCapture() { }
 
     [ServerRpc(RequireOwnership = false)]
-    public void RequestCaptureAttemptServerRpc(ServerRpcParams rpcParams = default)
+    public void RequestCaptureAttemptServerRpc(
+        ulong targetNetworkObjectId,
+        ServerRpcParams rpcParams = default
+    )
     {
+        Debug.Log(
+            $"GameManager: RequestCaptureAttemptServerRpc called by Client {rpcParams.Receive.SenderClientId} for target {targetNetworkObjectId}"
+        );
         ulong requestingClientId = rpcParams.Receive.SenderClientId;
-        if (requestingClientId == RoleManager.AntClientId)
+
+        Debug.Log(
+            $"GameManager: RequestCaptureAttemptServerRpc - Phase: {CurrentPhase.Value}, RequestingClient: {requestingClientId}, ARClientId: {ARClientId.Value}"
+        );
+        if (CurrentPhase.Value != GamePhase.Playing || requestingClientId != ARClientId.Value)
         {
-            Debug.Log(
-                $"GameManager: Received capture attempt request from Giant (Client {requestingClientId}). Proximity check runs in Update."
+            Debug.LogWarning(
+                $"GameManager: Received invalid capture attempt from Client {requestingClientId} during phase {CurrentPhase.Value}. Ignoring."
             );
+            return;
+        }
+
+        ClientRpcParams vrClientRpcParams = new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { VRClientId.Value } },
+        };
+
+        if (
+            NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(
+                targetNetworkObjectId,
+                out NetworkObject targetObject
+            )
+        )
+        {
+            NotifyCaptureAttemptClientRpc(targetObject.transform.position, vrClientRpcParams);
         }
         else
         {
             Debug.LogWarning(
-                $"GameManager: Received capture attempt from non-Giant client {requestingClientId}. Ignoring."
+                $"GameManager: Could not find target object with ID {targetNetworkObjectId} to get position for capture attempt VFX."
             );
+        }
+
+        if (
+            VRClientId.Value != ulong.MaxValue
+            && NetworkManager.Singleton.ConnectedClients.TryGetValue(
+                VRClientId.Value,
+                out NetworkClient vrClient
+            )
+            && vrClient.PlayerObject != null
+        )
+        {
+            ulong vrPlayerNetworkId = vrClient.PlayerObject.NetworkObjectId;
+
+            if (targetNetworkObjectId == vrPlayerNetworkId)
+            {
+                Debug.Log(
+                    $"GameManager: Successful capture attempt by Giant (Client {requestingClientId}) on Ant (Object ID {targetNetworkObjectId}). Giant wins."
+                );
+                EndGame(ARClientId.Value);
+                NotifyCaptureSuccessClientRpc(requestingClientId, targetNetworkObjectId);
+            }
+            else
+            {
+                Debug.Log(
+                    $"GameManager: Failed capture attempt by Giant (Client {requestingClientId}). Target ID {targetNetworkObjectId} is not the Ant (ID {vrPlayerNetworkId})."
+                );
+                NotifyCaptureFailClientRpc(requestingClientId, targetNetworkObjectId);
+            }
+        }
+        else
+        {
+            Debug.LogError("GameManager: Could not find VR player object for capture check.");
+            ClientRpcParams clientRpcParams = new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams
+                {
+                    TargetClientIds = new ulong[] { requestingClientId },
+                },
+            };
+            NotifyCaptureFailClientRpc(requestingClientId, targetNetworkObjectId, clientRpcParams);
         }
     }
 
@@ -437,5 +481,126 @@ public class GameManager : NetworkBehaviour
         {
             GameHUD.Instance.UpdateWinnerText(current);
         }
+    }
+
+    [ClientRpc]
+    private void NotifyCaptureSuccessClientRpc(
+        ulong captorClientId,
+        ulong capturedObjectId,
+        ClientRpcParams clientRpcParams = default
+    )
+    {
+        Debug.Log(
+            $"Client {NetworkManager.Singleton.LocalClientId}: Received successful capture notification. Captor: {captorClientId}, Captured: {capturedObjectId}"
+        );
+
+        if (NetworkManager.Singleton == null || NetworkManager.Singleton.SpawnManager == null)
+            return;
+
+        if (
+            NetworkManager.Singleton.ConnectedClients.TryGetValue(
+                captorClientId,
+                out NetworkClient captorClient
+            )
+            && captorClient.PlayerObject != null
+        )
+        {
+            PlayerFeedback captorFeedback =
+                captorClient.PlayerObject.GetComponent<PlayerFeedback>();
+            captorFeedback?.PlayCaptureSuccessEffect();
+        }
+        else
+        {
+            Debug.LogWarning(
+                $"GameManager Client: Could not find PlayerObject for captor client {captorClientId} to play success feedback."
+            );
+        }
+
+        if (
+            NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(
+                capturedObjectId,
+                out NetworkObject capturedObject
+            )
+        )
+        {
+            PlayerFeedback capturedFeedback = capturedObject.GetComponent<PlayerFeedback>();
+            capturedFeedback?.PlayCapturedEffect();
+        }
+        else
+        {
+            Debug.LogWarning(
+                $"GameManager Client: Could not find NetworkObject with ID {capturedObjectId} to play captured feedback."
+            );
+        }
+    }
+
+    [ClientRpc]
+    private void NotifyCaptureAttemptClientRpc(
+        Vector3 targetPosition,
+        ClientRpcParams clientRpcParams = default
+    )
+    {
+        Debug.Log(
+            $"Client {NetworkManager.Singleton.LocalClientId}: Received capture attempt notification at position {targetPosition}."
+        );
+
+        if (
+            VRClientId.Value != ulong.MaxValue
+            && NetworkManager.Singleton.ConnectedClients.TryGetValue(
+                VRClientId.Value,
+                out NetworkClient vrClient
+            )
+            && vrClient.PlayerObject != null
+        )
+        {
+            PlayerFeedback vrPlayerFeedback = vrClient.PlayerObject.GetComponent<PlayerFeedback>();
+            vrPlayerFeedback?.PlayCaptureAttemptEffect(targetPosition);
+        }
+        else
+        {
+            Debug.LogWarning(
+                $"GameManager Client: Could not find VR PlayerObject to play capture attempt feedback."
+            );
+        }
+    }
+
+    [ClientRpc]
+    private void NotifyCaptureFailClientRpc(
+        ulong attackerClientId,
+        ulong targetObjectId,
+        ClientRpcParams clientRpcParams = default
+    )
+    {
+        Debug.Log(
+            $"Client {NetworkManager.Singleton.LocalClientId}: Received failed capture notification. Attacker: {attackerClientId}, Target: {targetObjectId}"
+        );
+
+        if (NetworkManager.Singleton == null || NetworkManager.Singleton.SpawnManager == null)
+            return;
+
+        if (
+            NetworkManager.Singleton.ConnectedClients.TryGetValue(
+                attackerClientId,
+                out NetworkClient attackerClient
+            )
+            && attackerClient.PlayerObject != null
+        )
+        {
+            PlayerFeedback attackerFeedback =
+                attackerClient.PlayerObject.GetComponent<PlayerFeedback>();
+            attackerFeedback?.PlayCaptureFailEffect();
+        }
+        else
+        {
+            Debug.LogWarning(
+                $"GameManager Client: Could not find PlayerObject for attacker client {attackerClientId} to play fail feedback."
+            );
+        }
+
+        // if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(targetObjectId, out NetworkObject targetObject))
+        // {
+        //     PlayerFeedback targetFeedback = targetObject.GetComponent<PlayerFeedback>();
+        //     targetFeedback?.PlayMissedEffect();
+        // }
     }
 }
