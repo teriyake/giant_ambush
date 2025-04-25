@@ -178,9 +178,12 @@ public class ARLevelSetup : NetworkBehaviour
         }
 
         Debug.Log($"Server: Calling CreateRoom.Generate() with size {size} on {roomSpawnerObject.name}");
-        roomCreator.ConstructRoom(size);
+        roomCreator.GenerateRoomForAllClients(size);
 
         AnchorLevelPieceClientRpc(networkObject.NetworkObjectId, position, rotation);
+
+        GameObject VROriginGO = GameObject.FindGameObjectsWithTag("VROrigin")[0];
+        if (VROriginGO != null) { VROriginGO.transform.localScale = Vector3.one * 0.2f; }
     }
 
 

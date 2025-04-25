@@ -2,8 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions; // Unity's built-in assert library
+using Unity.Netcode;
 
-public class CreateRoom : MonoBehaviour
+[RequireComponent(typeof(NetworkObject))]
+public class CreateRoom : NetworkBehaviour
 {
     public GameObject roomRoot;
     public GameObject wallPrefab, cornerPrefab, floorPrefab;
@@ -47,7 +49,15 @@ public class CreateRoom : MonoBehaviour
         return true;
     }
 
-    public void ConstructRoom(Vector2 size)
+    public void GenerateRoomForAllClients(Vector2 size)
+    {
+        if (!IsServer) return;
+
+        ConstructRoomClientRpc(size);
+    }
+
+    [ClientRpc]
+    public void ConstructRoomClientRpc(Vector2 size)
     {
         GameObject roomPrefab = roomPrefabs[Random.Range(0, roomPrefabs.Length)];
         collider = GetComponent<BoxCollider>();
