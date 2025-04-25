@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1544662721729125112}
-  - component: {fileID: 7443705743856833325}
   - component: {fileID: -6623005088809846268}
+  - component: {fileID: 7443705743856833325}
   - component: {fileID: 1734808945065314788}
   m_Layer: 0
   m_Name: ProceduralRoomSpawner
@@ -35,27 +35,6 @@ Transform:
   - {fileID: 4826553374105582001}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7443705743856833325
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5549028673243853784}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 74817446aacc64ceabe044ff9da343c3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  roomRoot: {fileID: 7776694044199812504}
-  wallPrefab: {fileID: 5087550972260045046, guid: 0e2e9d86e44cdba4b9e3bb8c0355c34a,
-    type: 3}
-  cornerPrefab: {fileID: 8565488667879516828, guid: 964d019e82327ae41878ec0410f5d5e0,
-    type: 3}
-  floorPrefab: {fileID: 1425383010550552526, guid: 7ff30c7e7a931fa4abaacbcf858e20a1,
-    type: 3}
-  roomPrefabs:
-  - {fileID: 5087690157721671419, guid: c7f590bf2afaf4525bd8a73d39ac7733, type: 3}
 --- !u!114 &-6623005088809846268
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -77,6 +56,27 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+--- !u!114 &7443705743856833325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5549028673243853784}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74817446aacc64ceabe044ff9da343c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  roomRoot: {fileID: 7776694044199812504}
+  wallPrefab: {fileID: 5087550972260045046, guid: 0e2e9d86e44cdba4b9e3bb8c0355c34a,
+    type: 3}
+  cornerPrefab: {fileID: 8565488667879516828, guid: 964d019e82327ae41878ec0410f5d5e0,
+    type: 3}
+  floorPrefab: {fileID: 1425383010550552526, guid: 7ff30c7e7a931fa4abaacbcf858e20a1,
+    type: 3}
+  roomPrefabs:
+  - {fileID: 5087690157721671419, guid: c7f590bf2afaf4525bd8a73d39ac7733, type: 3}
 --- !u!65 &1734808945065314788
 BoxCollider:
   m_ObjectHideFlags: 0
