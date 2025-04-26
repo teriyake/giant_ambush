@@ -90,6 +90,9 @@ MonoBehaviour:
   - {fileID: 848855371842692032, guid: 16f915d1f07f10f4dad53e9e66e98afa, type: 3}
   - {fileID: 6436064586063943877, guid: f76c0046fe9320845991ccc887dd6674, type: 3}
   numberOfScatterObjects: 10
+  scatterOverlapLayerMask:
+    serializedVersion: 2
+    m_Bits: 512
 --- !u!65 &1734808945065314788
 BoxCollider:
   m_ObjectHideFlags: 0

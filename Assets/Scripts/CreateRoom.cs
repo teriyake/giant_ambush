@@ -35,7 +35,8 @@ public class CreateRoom : NetworkBehaviour
     BoxCollider collider;
     Vector2 roomSize;
     public GameObject[] scatterPrefabs;
-    public int numberOfScatterObjects = 20;
+    public LayerMask scatterOverlapLayerMask;
+    int numberOfScatterObjects;
 
     void Start()
     {
@@ -107,7 +108,7 @@ public class CreateRoom : NetworkBehaviour
                 roomObjects.Add(obj);
             }
         }
-        Debug.Log($"========={roomCorners.Count}");
+
         float x0 = roomCorners[0].position.x;
         float z0 = roomCorners[0].position.z;
         float x1 = roomCorners[1].position.x;
@@ -230,12 +231,37 @@ public class CreateRoom : NetworkBehaviour
                     GameObject wall = Instantiate(wallPrefab, roomRoot.transform);
                     wall.transform.localPosition = new Vector3(x, 0, y);
                     wall.transform.localRotation = Quaternion.Euler(0, 90, 0);
+                    if ((i == 0) && (j == 0))
+                        wall.transform.localScale = new Vector3(
+                            -wall.transform.localScale.x,
+                            wall.transform.localScale.y,
+                            wall.transform.localScale.z
+                        );
                     if (i == xBound)
                         wall.transform.localScale = new Vector3(
                             wall.transform.localScale.x,
                             wall.transform.localScale.y,
                             -wall.transform.localScale.z
                         );
+
+                    if ((i == xBound) && (j == yBound))
+                    {
+                        wall.transform.localRotation = Quaternion.Euler(0, 0, 0);
+                        wall.transform.localScale = new Vector3(
+                            -wall.transform.localScale.x,
+                            wall.transform.localScale.y,
+                            wall.transform.localScale.z
+                        );
+                    }
+                    if ((i == xBound) && (j == 0))
+                    {
+                        wall.transform.localRotation = Quaternion.Euler(0, -90, 0);
+                        wall.transform.localScale = new Vector3(
+                            wall.transform.localScale.x,
+                            wall.transform.localScale.y,
+                            -wall.transform.localScale.z
+                        );
+                    }
                 }
                 if (j == 0 || j == yBound)
                 {
@@ -248,6 +274,16 @@ public class CreateRoom : NetworkBehaviour
                             wall.transform.localScale.y,
                             -wall.transform.localScale.z
                         );
+                    if ((j == yBound) && (i == xBound))
+                        wall.transform.localRotation = Quaternion.Euler(0, 90, 0);
+                    if ((i == xBound) && (j == 0))
+                    {
+                        wall.transform.localScale = new Vector3(
+                            -wall.transform.localScale.x,
+                            wall.transform.localScale.y,
+                            wall.transform.localScale.z
+                        );
+                    }
                 }
             }
         }
@@ -275,16 +311,25 @@ public class CreateRoom : NetworkBehaviour
     {
         scatteredObjects = new List<ScatteredObjectData>();
 
+        if (!IsServer)
+        {
+            Debug.LogError("GenerateScatteredObjectsData called on a client!");
+            return;
+        }
+
         if (scatterPrefabs == null || scatterPrefabs.Length == 0)
         {
             Debug.LogWarning("Scatter prefabs list is empty or not assigned.");
             return;
         }
-
         if (roomRoot == null)
         {
             Debug.LogError("Room root is not assigned.");
             return;
+        }
+        if (scatterOverlapLayerMask.value == 0)
+        {
+            Debug.LogWarning("Scatter Overlap Layer Mask is not set.");
         }
 
         float minX = -size.x;
@@ -293,27 +338,191 @@ public class CreateRoom : NetworkBehaviour
         float maxZ = 0f;
         float yPos = 0f;
 
+        int numberOfScatterObjects = Mathf.CeilToInt(Mathf.Max(size.x, size.y));
+        Debug.Log($"Scattering {numberOfScatterObjects} objects...");
+
+        int maxPlacementAttemptsPerObject = 20;
+        Collider[] overlapResults = new Collider[10];
+
+        GameObject tempCheckParent = new GameObject("ScatterCheck_TemporaryColliders");
+        tempCheckParent.transform.SetParent(roomRoot.transform, false);
+        tempCheckParent.hideFlags = HideFlags.HideAndDontSave;
+        List<GameObject> tempInstances = new List<GameObject>();
+
         for (int i = 0; i < numberOfScatterObjects; i++)
         {
-            int prefabIndex = Random.Range(0, scatterPrefabs.Length);
-            Vector3 randomPosition = new Vector3(
-                Random.Range(minX, maxX),
-                yPos,
-                Random.Range(minZ, maxZ)
-            );
+            bool positionFound = false;
+            for (int attempt = 0; attempt < maxPlacementAttemptsPerObject; attempt++)
+            {
+                int prefabIndex = Random.Range(0, scatterPrefabs.Length);
+                GameObject prefab = scatterPrefabs[prefabIndex];
+                Collider prefabCollider = prefab.GetComponentInChildren<Collider>();
 
-            Quaternion randomRotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
-
-            scatteredObjects.Add(
-                new ScatteredObjectData
+                if (prefabCollider == null)
                 {
-                    prefabIndex = prefabIndex,
-                    localPosition = randomPosition,
-                    localRotation = randomRotation,
+                    Debug.LogError(
+                        $"Scatter prefab '{prefab.name}' or its children are missing a Collider component needed for overlap checks!",
+                        prefab
+                    );
+                    continue;
                 }
-            );
+
+                Vector3 randomLocalPosition = new Vector3(
+                    Random.Range(minX, maxX),
+                    yPos,
+                    Random.Range(minZ, maxZ)
+                );
+                Quaternion randomLocalRotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+
+                Vector3 checkPosition = roomRoot.transform.TransformPoint(randomLocalPosition);
+                Quaternion checkRotation = roomRoot.transform.rotation * randomLocalRotation;
+
+                int hitCount = 0;
+                bool overlaps = false;
+
+                if (prefabCollider is BoxCollider box)
+                {
+                    Vector3 center = box.center;
+                    Vector3 sizeScaled = Vector3.Scale(box.size, prefab.transform.lossyScale);
+                    Vector3 worldCenter =
+                        checkPosition
+                        + checkRotation * Vector3.Scale(center, prefab.transform.lossyScale);
+                    Vector3 halfExtents = sizeScaled / 2f;
+
+                    hitCount = Physics.OverlapBoxNonAlloc(
+                        worldCenter,
+                        halfExtents,
+                        overlapResults,
+                        checkRotation,
+                        scatterOverlapLayerMask
+                    );
+                }
+                else if (prefabCollider is SphereCollider sphere)
+                {
+                    Vector3 center = sphere.center;
+                    float maxScale = MaxComponent(prefab.transform.lossyScale);
+                    float radiusScaled = sphere.radius * maxScale;
+                    Vector3 worldCenter =
+                        checkPosition
+                        + checkRotation * Vector3.Scale(center, prefab.transform.lossyScale);
+
+                    hitCount = Physics.OverlapSphereNonAlloc(
+                        worldCenter,
+                        radiusScaled,
+                        overlapResults,
+                        scatterOverlapLayerMask
+                    );
+                }
+                else if (prefabCollider is CapsuleCollider capsule)
+                {
+                    Vector3 center = capsule.center;
+                    float height = capsule.height * prefab.transform.lossyScale.y;
+                    float radius =
+                        capsule.radius
+                        * Mathf.Max(prefab.transform.lossyScale.x, prefab.transform.lossyScale.z);
+                    Vector3 worldCenter =
+                        checkPosition
+                        + checkRotation * Vector3.Scale(center, prefab.transform.lossyScale);
+
+                    Vector3 halfExtents = new Vector3(radius, height / 2f, radius);
+                    Quaternion capsuleWorldRotation =
+                        checkRotation
+                        * Quaternion.Euler(
+                            capsule.direction == 0 ? new Vector3(0, 0, 90)
+                            : capsule.direction == 2 ? new Vector3(90, 0, 0)
+                            : Vector3.zero
+                        );
+
+                    hitCount = Physics.OverlapBoxNonAlloc(
+                        worldCenter,
+                        halfExtents,
+                        overlapResults,
+                        capsuleWorldRotation,
+                        scatterOverlapLayerMask
+                    );
+                }
+                else if (prefabCollider is MeshCollider meshCollider && meshCollider.convex)
+                {
+                    Bounds worldBounds = meshCollider.bounds;
+                    Vector3 center = meshCollider.bounds.center;
+                    Vector3 meshColliderSize = meshCollider.bounds.size;
+
+                    Vector3 centerScaled = Vector3.Scale(center, prefab.transform.lossyScale);
+                    Vector3 sizeScaled = Vector3.Scale(
+                        meshColliderSize,
+                        prefab.transform.lossyScale
+                    );
+                    Vector3 worldCenter = checkPosition + checkRotation * centerScaled;
+                    Vector3 halfExtents = sizeScaled / 2f;
+
+                    hitCount = Physics.OverlapBoxNonAlloc(
+                        worldCenter,
+                        halfExtents,
+                        overlapResults,
+                        checkRotation,
+                        scatterOverlapLayerMask
+                    );
+
+                    // float radius = meshCollider.bounds.extents.magnitude;
+                    // hitCount = Physics.OverlapSphereNonAlloc(worldCenter, radius * MaxComponent(prefab.transform.lossyScale), overlapResults, scatterOverlapLayerMask);
+                }
+                else
+                {
+                    Debug.LogError(
+                        $"Unsupported collider type {prefabCollider.GetType()} on {prefab.name} for overlap check.",
+                        prefab
+                    );
+                    continue;
+                }
+
+                if (hitCount > 0)
+                {
+                    overlaps = true;
+                    for (int k = 0; k < hitCount; k++)
+                    {
+                        Debug.Log($"Overlap detected with: {overlapResults[k].gameObject.name}");
+                    }
+                }
+
+                if (!overlaps)
+                {
+                    scatteredObjects.Add(
+                        new ScatteredObjectData
+                        {
+                            prefabIndex = prefabIndex,
+                            localPosition = randomLocalPosition,
+                            localRotation = randomLocalRotation,
+                        }
+                    );
+
+                    GameObject tempInstance = Instantiate(prefab, tempCheckParent.transform);
+                    tempInstance.transform.localPosition = randomLocalPosition;
+                    tempInstance.transform.localRotation = randomLocalRotation;
+                    tempInstances.Add(tempInstance);
+
+                    positionFound = true;
+                    break;
+                }
+            }
+
+            if (!positionFound)
+            {
+                Debug.LogWarning(
+                    $"Failed to find a non-overlapping position for scattered object {i + 1} after {maxPlacementAttemptsPerObject} attempts. Room might be too full or colliders too large."
+                );
+            }
         }
-        Debug.Log($"Generated data for {numberOfScatterObjects} scattered objects.");
+
+        Destroy(tempCheckParent);
+
+        Debug.Log(
+            $"Generated data for {scatteredObjects.Count}/{numberOfScatterObjects} scattered objects."
+        );
+    }
+
+    float MaxComponent(Vector3 v)
+    {
+        return Mathf.Max(Mathf.Max(v.x, v.y), v.z);
     }
 
     [ClientRpc]
