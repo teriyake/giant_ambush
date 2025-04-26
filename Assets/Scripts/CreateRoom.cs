@@ -1,24 +1,44 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Assertions; // Unity's built-in assert library
-using Unity.Netcode;
 
 [RequireComponent(typeof(NetworkObject))]
 public class CreateRoom : NetworkBehaviour
 {
+    [System.Serializable]
+    public struct ScatteredObjectData : INetworkSerializable
+    {
+        public int prefabIndex;
+        public Vector3 localPosition;
+        public Quaternion localRotation;
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer)
+            where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref prefabIndex);
+            serializer.SerializeValue(ref localPosition);
+            serializer.SerializeValue(ref localRotation);
+        }
+    }
+
     public GameObject roomRoot;
-    public GameObject wallPrefab, cornerPrefab, floorPrefab, ceilingPrefab;
+    public GameObject wallPrefab,
+        cornerPrefab,
+        floorPrefab,
+        ceilingPrefab;
 
     public GameObject[] roomPrefabs;
     List<Transform> roomCorners = new List<Transform>();
     List<GameObject> roomObjects = new List<GameObject>();
     BoxCollider collider;
     Vector2 roomSize;
-    public GameObject[] scatterPrefabs; 
+    public GameObject[] scatterPrefabs;
     public int numberOfScatterObjects = 20;
 
-    void Start(){
+    void Start()
+    {
         /*
         GameObject roomPrefab = roomPrefabs[Random.Range(0, roomPrefabs.Length)];
         collider = GetComponent<BoxCollider>();
@@ -29,22 +49,27 @@ public class CreateRoom : NetworkBehaviour
             }
             else if (!obj.name.Contains("Wall")){
                 roomObjects.Add(obj);
-            }  
+            }
         }
         */
 
-        // ConstructRoom(new Vector2(20, 20)); 
+        // ConstructRoom(new Vector2(20, 20));
     }
 
-    bool isInBounds(GameObject obj, Bounds bounds){
+    bool isInBounds(GameObject obj, Bounds bounds)
+    {
         Renderer renderer = obj.GetComponent<Renderer>();
-        if(renderer){
-            if(!(bounds.Contains(renderer.bounds.min) && bounds.Contains(renderer.bounds.max))){
+        if (renderer)
+        {
+            if (!(bounds.Contains(renderer.bounds.min) && bounds.Contains(renderer.bounds.max)))
+            {
                 return false;
             }
         }
-        for(int i=0;i< obj.transform.childCount;i++){
-            if(!isInBounds(obj.transform.GetChild(i).gameObject, bounds)){
+        for (int i = 0; i < obj.transform.childCount; i++)
+        {
+            if (!isInBounds(obj.transform.GetChild(i).gameObject, bounds))
+            {
                 return false;
             }
         }
@@ -53,10 +78,14 @@ public class CreateRoom : NetworkBehaviour
 
     public void GenerateRoomForAllClients(Vector2 size)
     {
-        if (!IsServer) return;
+        if (!IsServer)
+            return;
 
         ConstructRoomClientRpc(size);
 
+        GenerateScatteredObjectsData(size, out List<ScatteredObjectData> scatteredObjectsDataList);
+
+        InstantiateScatteredObjectsClientRpc(scatteredObjectsDataList.ToArray());
 
         GameManager.Instance?.Server_NotifyLevelReady(roomRoot);
     }
@@ -85,7 +114,6 @@ public class CreateRoom : NetworkBehaviour
         float z1 = roomCorners[1].position.z;
 
         float length = Mathf.Sqrt(Mathf.Pow(x1 - x0, 2) + Mathf.Pow(z1 - z0, 2));
-
 
         float x2 = roomCorners[2].position.x;
         float z2 = roomCorners[2].position.z;
@@ -203,7 +231,11 @@ public class CreateRoom : NetworkBehaviour
                     wall.transform.localPosition = new Vector3(x, 0, y);
                     wall.transform.localRotation = Quaternion.Euler(0, 90, 0);
                     if (i == xBound)
-                        wall.transform.localScale = new Vector3(wall.transform.localScale.x, wall.transform.localScale.y, -wall.transform.localScale.z);
+                        wall.transform.localScale = new Vector3(
+                            wall.transform.localScale.x,
+                            wall.transform.localScale.y,
+                            -wall.transform.localScale.z
+                        );
                 }
                 if (j == 0 || j == yBound)
                 {
@@ -211,7 +243,11 @@ public class CreateRoom : NetworkBehaviour
                     GameObject wall = Instantiate(wallPrefab, roomRoot.transform);
                     wall.transform.localPosition = new Vector3(x, 0, y);
                     if (j == yBound)
-                        wall.transform.localScale = new Vector3(wall.transform.localScale.x, wall.transform.localScale.y, -wall.transform.localScale.z);
+                        wall.transform.localScale = new Vector3(
+                            wall.transform.localScale.x,
+                            wall.transform.localScale.y,
+                            -wall.transform.localScale.z
+                        );
                 }
             }
         }
@@ -223,7 +259,7 @@ public class CreateRoom : NetworkBehaviour
         if (ceilingPrefab != null)
         {
             GameObject ceiling = Instantiate(ceilingPrefab, roomRoot.transform);
-            float ceilingHeight = 3f;
+            float ceilingHeight = 4f;
             ceiling.transform.localPosition = new Vector3(-size.x / 2, ceilingHeight, -size.y / 2);
             ceiling.transform.localScale = new Vector3(size.x, 1, size.y);
         }
@@ -232,10 +268,87 @@ public class CreateRoom : NetworkBehaviour
             Debug.LogWarning("Ceiling prefab is not assigned");
         }
 
-        ScatterObjects(size);
-
         roomRoot.transform.localPosition -= new Vector3(-size.x / 2f, 0, -size.y / 2f);
     }
+
+    void GenerateScatteredObjectsData(Vector2 size, out List<ScatteredObjectData> scatteredObjects)
+    {
+        scatteredObjects = new List<ScatteredObjectData>();
+
+        if (scatterPrefabs == null || scatterPrefabs.Length == 0)
+        {
+            Debug.LogWarning("Scatter prefabs list is empty or not assigned.");
+            return;
+        }
+
+        if (roomRoot == null)
+        {
+            Debug.LogError("Room root is not assigned.");
+            return;
+        }
+
+        float minX = -size.x;
+        float maxX = 0f;
+        float minZ = -size.y;
+        float maxZ = 0f;
+        float yPos = 0f;
+
+        for (int i = 0; i < numberOfScatterObjects; i++)
+        {
+            int prefabIndex = Random.Range(0, scatterPrefabs.Length);
+            Vector3 randomPosition = new Vector3(
+                Random.Range(minX, maxX),
+                yPos,
+                Random.Range(minZ, maxZ)
+            );
+
+            Quaternion randomRotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+
+            scatteredObjects.Add(
+                new ScatteredObjectData
+                {
+                    prefabIndex = prefabIndex,
+                    localPosition = randomPosition,
+                    localRotation = randomRotation,
+                }
+            );
+        }
+        Debug.Log($"Generated data for {numberOfScatterObjects} scattered objects.");
+    }
+
+    [ClientRpc]
+    void InstantiateScatteredObjectsClientRpc(ScatteredObjectData[] scatteredObjectsData)
+    {
+        if (roomRoot == null)
+        {
+            Debug.LogError(
+                "Room root is not assigned when trying to instantiate scattered objects."
+            );
+            return;
+        }
+
+        if (scatterPrefabs == null || scatterPrefabs.Length == 0)
+        {
+            Debug.LogError("Scatter prefabs list is empty or not assigned on client.");
+            return;
+        }
+
+        foreach (var objData in scatteredObjectsData)
+        {
+            if (objData.prefabIndex < 0 || objData.prefabIndex >= scatterPrefabs.Length)
+            {
+                Debug.LogError($"Invalid prefab index {objData.prefabIndex} received.");
+                continue;
+            }
+
+            GameObject prefabToScatter = scatterPrefabs[objData.prefabIndex];
+            GameObject scatteredObj = Instantiate(prefabToScatter, roomRoot.transform);
+            scatteredObj.transform.localPosition = objData.localPosition;
+            scatteredObj.transform.localRotation = objData.localRotation;
+        }
+        Debug.Log($"Instantiated {scatteredObjectsData.Length} scattered objects on client.");
+    }
+
     Vector2 CalculateRoomSize()
     {
         float length = Vector2.Distance(
@@ -259,7 +372,8 @@ public class CreateRoom : NetworkBehaviour
             return;
         }
 
-        if (roomRoot == null) return;
+        if (roomRoot == null)
+            return;
 
         float minX = -size.x;
         float maxX = 0f;

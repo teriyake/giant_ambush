@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 4161449732
+  GlobalObjectIdHash: 2231544269
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -89,7 +89,7 @@ MonoBehaviour:
   - {fileID: 9112034284639769819, guid: ea0853a3b2545524481b0c984f27afd1, type: 3}
   - {fileID: 848855371842692032, guid: 16f915d1f07f10f4dad53e9e66e98afa, type: 3}
   - {fileID: 6436064586063943877, guid: f76c0046fe9320845991ccc887dd6674, type: 3}
-  numberOfScatterObjects: 20
+  numberOfScatterObjects: 10
 --- !u!65 &1734808945065314788
 BoxCollider:
   m_ObjectHideFlags: 0

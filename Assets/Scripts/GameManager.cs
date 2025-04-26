@@ -33,7 +33,6 @@ public class GameManager : NetworkBehaviour
 
     private GameObject VROriginGO;
 
-
     public NetworkVariable<GamePhase> CurrentPhase = new NetworkVariable<GamePhase>(
         GamePhase.WaitingForPlayers
     );
@@ -41,7 +40,7 @@ public class GameManager : NetworkBehaviour
     public NetworkVariable<ulong> WinnerClientId = new NetworkVariable<ulong>(ulong.MaxValue);
     public NetworkVariable<ulong> VRClientId = new NetworkVariable<ulong>(ulong.MaxValue);
     public NetworkVariable<ulong> ARClientId = new NetworkVariable<ulong>(ulong.MaxValue);
-    private NetworkedAutoLevelGenerator _levelGeneratorInstance; 
+    private NetworkedAutoLevelGenerator _levelGeneratorInstance;
     private Transform _vrPlayerSpawnPoint;
     private bool _levelGenerated = false;
 
@@ -81,6 +80,21 @@ public class GameManager : NetworkBehaviour
             GameHUD.Instance.UpdateWinnerText(WinnerClientId.Value);
         }
 
+        if (PlatformRoleManager.Instance != null)
+            {
+                Debug.Log(
+                    $"PlayerMovement (Owner: {OwnerClientId}): Platform not ready yet. Subscribing to OnPlatformReady event."
+                );
+                PlatformRoleManager.Instance.OnPlatformReady += ConfigureARCameraCulling;
+            }
+            else
+            {
+                Debug.LogError(
+                    $"PlayerMovement (Owner: {OwnerClientId}): PlatformRoleManager Instance not found on spawn!",
+                    this
+                );
+            }
+
         Debug.Log($"GameManager spawned. IsServer: {IsServer}, IsClient: {IsClient}");
     }
 
@@ -108,32 +122,31 @@ public class GameManager : NetworkBehaviour
 
     public void Server_NotifyLevelReady(GameObject levelRootObject)
     {
-        if (!IsServer) return;
+        if (!IsServer)
+            return;
 
         Debug.Log($"GameManager [Server]: Received Level Ready notification from level generator.");
         _levelGenerated = true;
 
-       
         Debug.LogWarning("GameManager [Server]: TODO: Calculate VR Spawn point CreateRoom.");
-        
-       
+
         if (CurrentPhase.Value == GamePhase.Setup)
         {
-             Debug.Log(
-                 "GameManager [Server]: Level Ready notification received while in Setup phase. Proceeding to LevelReady and starting countdown."
-             );
-             CurrentPhase.Value = GamePhase.LevelReady;
-             StartCoroutine(StartGameCountdown());
+            Debug.Log(
+                "GameManager [Server]: Level Ready notification received while in Setup phase. Proceeding to LevelReady and starting countdown."
+            );
+            CurrentPhase.Value = GamePhase.LevelReady;
+            StartCoroutine(StartGameCountdown());
         }
-         else
+        else
         {
-             Debug.LogWarning(
-                 $"GameManager [Server]: Level Ready notification received but CurrentPhase is {CurrentPhase.Value}. Not starting countdown yet (will start when both players connect)."
-             );
+            Debug.LogWarning(
+                $"GameManager [Server]: Level Ready notification received but CurrentPhase is {CurrentPhase.Value}. Not starting countdown yet (will start when both players connect)."
+            );
         }
     }
 
-public void RegisterLevelGenerator(NetworkedAutoLevelGenerator generator)
+    public void RegisterLevelGenerator(NetworkedAutoLevelGenerator generator)
     {
         if (!IsServer || generator == null)
             return;
@@ -331,6 +344,7 @@ public void RegisterLevelGenerator(NetworkedAutoLevelGenerator generator)
             );
         }
     }
+
     IEnumerator StartGameCountdown()
     {
         if (!IsServer)
@@ -480,16 +494,22 @@ public void RegisterLevelGenerator(NetworkedAutoLevelGenerator generator)
 
     private void OnPhaseChanged(GamePhase previous, GamePhase current)
     {
-        Debug.Log($"[{ (IsServer ? "Server" : "Client") } { NetworkManager.Singleton?.LocalClientId ?? 0 }] OnPhaseChanged: {previous} -> {current}");
+        Debug.Log(
+            $"[{(IsServer ? "Server" : "Client")} {NetworkManager.Singleton?.LocalClientId ?? 0}] OnPhaseChanged: {previous} -> {current}"
+        );
 
         if (GameHUD.Instance != null)
         {
-            Debug.Log($"[{ (IsServer ? "Server" : "Client") } { NetworkManager.Singleton?.LocalClientId ?? 0 }] GameHUD.Instance found. Calling UpdatePhase({current}).");
+            Debug.Log(
+                $"[{(IsServer ? "Server" : "Client")} {NetworkManager.Singleton?.LocalClientId ?? 0}] GameHUD.Instance found. Calling UpdatePhase({current})."
+            );
             GameHUD.Instance.UpdatePhase(current);
         }
         else
         {
-            Debug.LogError($"[{ (IsServer ? "Server" : "Client") } { NetworkManager.Singleton?.LocalClientId ?? 0 }] GameHUD.Instance is NULL when trying to update phase to {current}!");
+            Debug.LogError(
+                $"[{(IsServer ? "Server" : "Client")} {NetworkManager.Singleton?.LocalClientId ?? 0}] GameHUD.Instance is NULL when trying to update phase to {current}!"
+            );
         }
     }
 
@@ -627,5 +647,52 @@ public void RegisterLevelGenerator(NetworkedAutoLevelGenerator generator)
         //     PlayerFeedback targetFeedback = targetObject.GetComponent<PlayerFeedback>();
         //     targetFeedback?.PlayMissedEffect();
         // }
+    }
+
+    private void ConfigureARCameraCulling()
+    {
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsClient)
+        {
+            return;
+        }
+
+        if (RoleManager.GetARClientId() == ulong.MaxValue)
+        {
+            Debug.LogWarning(
+                "GameManager: AR Client ID not yet assigned in RoleManager. Cannot configure camera culling."
+            );
+            return;
+        }
+
+        if (RoleManager.IsClientAR(NetworkManager.Singleton.LocalClientId))
+        {
+            Debug.Log(
+                $"GameManager: Local client {NetworkManager.Singleton.LocalClientId} is the AR player. Configuring camera culling."
+            );
+            Camera mainCamera = Camera.main;
+            if (mainCamera != null)
+            {
+                int secretLayer = LayerMask.NameToLayer("Wall");
+                if (secretLayer != -1)
+                {
+                    mainCamera.cullingMask &= ~(1 << secretLayer);
+                    Debug.Log($"GameManager: Hid layer 'Wall' ({secretLayer}) from AR camera.");
+                }
+                else
+                {
+                    Debug.LogWarning("GameManager: Layer 'Wall' not found!");
+                }
+            }
+            else
+            {
+                Debug.LogError("GameManager: Main camera not found!");
+            }
+        }
+        else
+        {
+            Debug.Log(
+                $"GameManager: Local client {NetworkManager.Singleton.LocalClientId} is not the AR player. No camera culling needed."
+            );
+        }
     }
 }
