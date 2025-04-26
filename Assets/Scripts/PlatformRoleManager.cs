@@ -1,8 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.Management;
-using System;
 
 public class PlatformRoleManager : MonoBehaviour
 {
@@ -11,13 +11,21 @@ public class PlatformRoleManager : MonoBehaviour
     public bool IsPlatformReady { get; private set; } = false;
 
     [Header("XR Setups")]
-    [SerializeField] private GameObject m_arRigGameObject;
-    [SerializeField] private GameObject m_arSessionGameObject;
-    [SerializeField] private GameObject m_vrRigGameObject;
+    [SerializeField]
+    private GameObject m_arRigGameObject;
+
+    [SerializeField]
+    private GameObject m_arSessionGameObject;
+
+    [SerializeField]
+    private GameObject m_vrRigGameObject;
 
     [Header("Camera Settings")]
-    [SerializeField] private Camera m_arCamera;
-    [SerializeField] private Camera m_vrCamera;
+    [SerializeField]
+    private Camera m_arCamera;
+
+    [SerializeField]
+    private Camera m_vrCamera;
 
     private const string MainCameraTag = "MainCamera";
     private bool m_isInitializing = false;
@@ -32,7 +40,12 @@ public class PlatformRoleManager : MonoBehaviour
         Instance = this;
         // DontDestroyOnLoad(gameObject);
 
-        if (m_arRigGameObject == null || m_vrRigGameObject == null || m_arCamera == null || m_vrCamera == null)
+        if (
+            m_arRigGameObject == null
+            || m_vrRigGameObject == null
+            || m_arCamera == null
+            || m_vrCamera == null
+        )
         {
             Debug.LogError("PlatformRoleManager: Rigs or Cameras not assigned!", this);
             return;
@@ -60,16 +73,10 @@ public class PlatformRoleManager : MonoBehaviour
     }
 
     // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    void Start() { }
 
     // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    void Update() { }
 
     private IEnumerator SwitchToXR(bool isVrHost)
     {
@@ -77,7 +84,11 @@ public class PlatformRoleManager : MonoBehaviour
 
         Debug.Log("SwitchToXR: Starting...");
 
-        if (XRGeneralSettings.Instance != null && XRGeneralSettings.Instance.Manager != null && XRGeneralSettings.Instance.Manager.isInitializationComplete)
+        if (
+            XRGeneralSettings.Instance != null
+            && XRGeneralSettings.Instance.Manager != null
+            && XRGeneralSettings.Instance.Manager.isInitializationComplete
+        )
         {
             Debug.Log("SwitchToXR: Stopping existing XR Subsystems...");
             XRGeneralSettings.Instance.Manager.StopSubsystems();
@@ -87,8 +98,8 @@ public class PlatformRoleManager : MonoBehaviour
             XRGeneralSettings.Instance.Manager.DeinitializeLoader();
             yield return null;
             Debug.Log("SwitchToXR: Existing XR should be stopped.");
-        } 
-        else 
+        }
+        else
         {
             Debug.Log("SwitchToXR: No active XR Loader found or XR Manager unavailable.");
         }
@@ -100,12 +111,16 @@ public class PlatformRoleManager : MonoBehaviour
 
         if (XRGeneralSettings.Instance.Manager.activeLoader == null)
         {
-            Debug.LogError($"SwitchToXR: Failed to initialize {targetSystem} loader! Check XR Plug-in Management settings for this build target.");
+            Debug.LogError(
+                $"SwitchToXR: Failed to initialize {targetSystem} loader! Check XR Plug-in Management settings for this build target."
+            );
             m_isInitializing = false;
             yield break;
         }
 
-        Debug.Log($"SwitchToXR: Successfully initialized {targetSystem} loader ({XRGeneralSettings.Instance.Manager.activeLoader.name}).");
+        Debug.Log(
+            $"SwitchToXR: Successfully initialized {targetSystem} loader ({XRGeneralSettings.Instance.Manager.activeLoader.name})."
+        );
 
         Debug.Log("SwitchToXR: Starting XR Subsystems...");
         XRGeneralSettings.Instance.Manager.StartSubsystems();
@@ -117,22 +132,46 @@ public class PlatformRoleManager : MonoBehaviour
         Debug.Log($"SwitchToXR: Activating {(isVrHost ? "VR" : "AR")} Rig and Camera...");
         if (isVrHost)
         {
-            if(m_arRigGameObject != null) m_arRigGameObject.SetActive(false);
-            if(m_vrRigGameObject != null) m_vrRigGameObject.SetActive(true);
-            if(m_arCamera != null) m_arCamera.enabled = false;
-            if(m_vrCamera != null) m_vrCamera.enabled = true;
-            if(m_vrCamera != null && m_vrCamera.tag != MainCameraTag) m_vrCamera.tag = MainCameraTag;
-            if(m_arCamera != null && m_arCamera.CompareTag(MainCameraTag)) m_arCamera.tag = "Untagged";
+            if (m_arRigGameObject != null)
+                m_arRigGameObject.SetActive(false);
+            if (m_vrRigGameObject != null)
+                m_vrRigGameObject.SetActive(true);
+            if (m_arCamera != null)
+                m_arCamera.enabled = false;
+            if (m_vrCamera != null)
+                m_vrCamera.enabled = true;
+            if (m_vrCamera != null && m_vrCamera.tag != MainCameraTag)
+                m_vrCamera.tag = MainCameraTag;
+            if (m_arCamera != null && m_arCamera.CompareTag(MainCameraTag))
+                m_arCamera.tag = "Untagged";
             Debug.Log("SwitchToXR: VR Rig activated.");
         }
-        else 
+        else
         {
-            if(m_vrRigGameObject != null) m_vrRigGameObject.SetActive(false);
-            if(m_arRigGameObject != null) m_arRigGameObject.SetActive(true);
-            if(m_vrCamera != null) m_vrCamera.enabled = false;
-            if(m_arCamera != null) m_arCamera.enabled = true;
-            if(m_arCamera != null && m_arCamera.tag != MainCameraTag) m_arCamera.tag = MainCameraTag;
-            if(m_vrCamera != null && m_vrCamera.CompareTag(MainCameraTag)) m_vrCamera.tag = "Untagged";
+            if (m_vrRigGameObject != null)
+                m_vrRigGameObject.SetActive(false);
+            if (m_arRigGameObject != null)
+                m_arRigGameObject.SetActive(true);
+            if (m_vrCamera != null)
+                m_vrCamera.enabled = false;
+            if (m_arCamera != null)
+            {
+                m_arCamera.enabled = true;
+                int secretLayer = LayerMask.NameToLayer("Wall");
+                if (secretLayer != -1)
+                {
+                    m_arCamera.cullingMask &= ~(1 << secretLayer);
+                    Debug.Log($"GameManager: Hid layer 'Wall' ({secretLayer}) from AR camera.");
+                }
+                else
+                {
+                    Debug.LogWarning("GameManager: Layer 'Wall' not found!");
+                }
+            }
+            if (m_arCamera != null && m_arCamera.tag != MainCameraTag)
+                m_arCamera.tag = MainCameraTag;
+            if (m_vrCamera != null && m_vrCamera.CompareTag(MainCameraTag))
+                m_vrCamera.tag = "Untagged";
             Debug.Log("SwitchToXR: AR Rig activated.");
         }
 
@@ -149,7 +188,11 @@ public class PlatformRoleManager : MonoBehaviour
     void OnApplicationQuit()
     {
         Debug.Log("OnApplicationQuit: Stopping XR Subsystems and Deinitializing Loader.");
-        if (XRGeneralSettings.Instance != null && XRGeneralSettings.Instance.Manager != null && XRGeneralSettings.Instance.Manager.isInitializationComplete)
+        if (
+            XRGeneralSettings.Instance != null
+            && XRGeneralSettings.Instance.Manager != null
+            && XRGeneralSettings.Instance.Manager.isInitializationComplete
+        )
         {
             XRGeneralSettings.Instance.Manager.StopSubsystems();
             XRGeneralSettings.Instance.Manager.DeinitializeLoader();

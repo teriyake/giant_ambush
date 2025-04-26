@@ -85,7 +85,7 @@ public class GameManager : NetworkBehaviour
                 Debug.Log(
                     $"PlayerMovement (Owner: {OwnerClientId}): Platform not ready yet. Subscribing to OnPlatformReady event."
                 );
-                PlatformRoleManager.Instance.OnPlatformReady += ConfigureARCameraCulling;
+                // PlatformRoleManager.Instance.OnPlatformReady += ConfigureARCameraCulling;
             }
             else
             {

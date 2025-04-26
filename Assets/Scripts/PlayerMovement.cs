@@ -155,11 +155,6 @@ public class PlayerMovement : NetworkBehaviour
 
             receivedNewTarget = false;
         }
-
-        // Vector3 newPos = Vector3.MoveTowards(m_rigidbody.position, serverTargetPosition, Time.fixedDeltaTime * moveSpeed); // Define moveSpeed
-        // Quaternion newRot = Quaternion.RotateTowards(m_rigidbody.rotation, serverTargetRotation, Time.fixedDeltaTime * rotationSpeed); // Define rotationSpeed
-        // m_rigidbody.MovePosition(newPos);
-        // m_rigidbody.MoveRotation(newRot);
     }
 
     public override void OnDestroy()
