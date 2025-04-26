@@ -54,6 +54,9 @@ public class CreateRoom : NetworkBehaviour
         if (!IsServer) return;
 
         ConstructRoomClientRpc(size);
+
+
+        GameManager.Instance?.Server_NotifyLevelReady(roomRoot);
     }
 
     [ClientRpc]
@@ -86,12 +89,12 @@ public class CreateRoom : NetworkBehaviour
         float z2 = roomCorners[2].position.z;
 
         float breadth = Mathf.Sqrt(Mathf.Pow(x2 - x1, 2) + Mathf.Pow(z2 - z1, 2));
-        
+
         roomSize = new Vector2(length, breadth);
         Vector2 rmdr = new Vector2(size.x % roomSize.x, size.y % roomSize.y);
 
         Debug.Log("Room Size: " + size);
-        Debug.Log("Rmdr: " + rmdr); 
+        Debug.Log("Rmdr: " + rmdr);
 
         HashSet<GameObject> xSet = new HashSet<GameObject>();
         if (rmdr.x != 0)
@@ -99,7 +102,8 @@ public class CreateRoom : NetworkBehaviour
             collider.size = new Vector3(rmdr.x * 2, collider.size.y, roomSize.y * 2);
             foreach (GameObject obj in roomObjects)
             {
-                if(isInBounds(obj, collider.bounds)){
+                if (isInBounds(obj, collider.bounds))
+                {
                     xSet.Add(obj);
                 }
             }
@@ -111,21 +115,26 @@ public class CreateRoom : NetworkBehaviour
             collider.size = new Vector3(roomSize.x * 2, collider.size.y, rmdr.y * 2);
             foreach (GameObject obj in roomObjects)
             {
-                if(isInBounds(obj, collider.bounds)){
+                if (isInBounds(obj, collider.bounds))
+                {
                     ySet.Add(obj);
                 }
             }
         }
 
         HashSet<GameObject> xySet = new HashSet<GameObject>(xSet);
-        xySet.IntersectWith(ySet);  
+        xySet.IntersectWith(ySet);
 
-        int xBound = Mathf.CeilToInt(size.x/roomSize.x);
-        int yBound = Mathf.CeilToInt(size.y/roomSize.y);
-        for(int i=0;i<xBound;i++){
-            for(int j=0;j<yBound;j++){
-                if(i == xBound-1 && j == yBound-1){
-                    foreach(GameObject obj in xySet){
+        int xBound = Mathf.CeilToInt(size.x / roomSize.x);
+        int yBound = Mathf.CeilToInt(size.y / roomSize.y);
+        for (int i = 0; i < xBound; i++)
+        {
+            for (int j = 0; j < yBound; j++)
+            {
+                if (i == xBound - 1 && j == yBound - 1)
+                {
+                    foreach (GameObject obj in xySet)
+                    {
                         GameObject newObj = Instantiate(obj, roomRoot.transform);
                         newObj.transform.localPosition = new Vector3(
                             obj.transform.localPosition.x - i * roomSize.x,
@@ -133,9 +142,11 @@ public class CreateRoom : NetworkBehaviour
                             obj.transform.localPosition.z - j * roomSize.y
                         );
                     }
-                } 
-                else if(i == xBound-1){
-                    foreach(GameObject obj in xSet){
+                }
+                else if (i == xBound - 1)
+                {
+                    foreach (GameObject obj in xSet)
+                    {
                         GameObject newObj = Instantiate(obj, roomRoot.transform);
                         newObj.transform.localPosition = new Vector3(
                             obj.transform.localPosition.x - i * roomSize.x,
@@ -143,9 +154,11 @@ public class CreateRoom : NetworkBehaviour
                             obj.transform.localPosition.z - j * roomSize.y
                         );
                     }
-                } 
-                else if(j == yBound-1){
-                    foreach(GameObject obj in ySet){
+                }
+                else if (j == yBound - 1)
+                {
+                    foreach (GameObject obj in ySet)
+                    {
                         GameObject newObj = Instantiate(obj, roomRoot.transform);
                         newObj.transform.localPosition = new Vector3(
                             obj.transform.localPosition.x - i * roomSize.x,
@@ -153,9 +166,11 @@ public class CreateRoom : NetworkBehaviour
                             obj.transform.localPosition.z - j * roomSize.y
                         );
                     }
-                } 
-                else {
-                    foreach(GameObject obj in roomObjects){
+                }
+                else
+                {
+                    foreach (GameObject obj in roomObjects)
+                    {
                         GameObject newObj = Instantiate(obj, roomRoot.transform);
                         newObj.transform.localPosition = new Vector3(
                             obj.transform.localPosition.x - i * roomSize.x,
@@ -167,28 +182,33 @@ public class CreateRoom : NetworkBehaviour
             }
         }
 
-        for (int i=0;i<=xBound;i++) {
-            for (int j=0;j<=yBound;j++) {
+        for (int i = 0; i <= xBound; i++)
+        {
+            for (int j = 0; j <= yBound; j++)
+            {
                 int x = -(int)Mathf.Min(size.x, (i * roomSize.x));
                 int y = -(int)Mathf.Min(size.y, (j * roomSize.y));
-                if ((i == 0 || i == xBound) && (j == 0 || j == yBound)) {
+                if ((i == 0 || i == xBound) && (j == 0 || j == yBound))
+                {
                     Debug.Log("Creating corner at: " + x + ", " + y);
                     GameObject corner = Instantiate(cornerPrefab, roomRoot.transform);
                     corner.transform.localPosition = new Vector3(x, 0, y);
                 }
-                if (i == 0 || i == xBound) {
+                if (i == 0 || i == xBound)
+                {
                     Debug.Log("Creating wall at: " + x + ", " + y);
                     GameObject wall = Instantiate(wallPrefab, roomRoot.transform);
                     wall.transform.localPosition = new Vector3(x, 0, y);
                     wall.transform.localRotation = Quaternion.Euler(0, 90, 0);
-                    if(i==xBound)
+                    if (i == xBound)
                         wall.transform.localScale = new Vector3(wall.transform.localScale.x, wall.transform.localScale.y, -wall.transform.localScale.z);
                 }
-                if (j == 0 || j == yBound) {
+                if (j == 0 || j == yBound)
+                {
                     Debug.Log("Creating wall at: " + x + ", " + y);
                     GameObject wall = Instantiate(wallPrefab, roomRoot.transform);
                     wall.transform.localPosition = new Vector3(x, 0, y);
-                    if(j==yBound)
+                    if (j == yBound)
                         wall.transform.localScale = new Vector3(wall.transform.localScale.x, wall.transform.localScale.y, -wall.transform.localScale.z);
                 }
             }
@@ -197,8 +217,9 @@ public class CreateRoom : NetworkBehaviour
         GameObject floor = Instantiate(floorPrefab, roomRoot.transform);
         floor.transform.localPosition = new Vector3(size.x / 2, 0, size.y / 2);
         floor.transform.localScale = new Vector3(size.x, 1, size.y);
-    }
 
+        roomRoot.transform.localPosition -= new Vector3(-size.x / 2f, 0, -size.y / 2f);
+    }
     Vector2 CalculateRoomSize()
     {
         float length = Vector2.Distance(

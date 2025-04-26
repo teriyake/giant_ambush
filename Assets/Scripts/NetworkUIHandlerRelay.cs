@@ -250,6 +250,7 @@ public class NetworkUIHandlerRelay : MonoBehaviour
                             $"Host started. Assigned VR Giant role to Client ID: {GameManager.Instance.VRClientId.Value}"
                         );
                         SetStatus($"Host active. Waiting for client... Join Code: {_joinCode}");
+                        Debug.LogError($"{_joinCode}");
                     }
                     else
                     {

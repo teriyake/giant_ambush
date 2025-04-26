@@ -72,7 +72,7 @@ public class GameHUD : MonoBehaviour
                 statusText.text = "Waiting for players...";
                 break;
             case GamePhase.Setup:
-                if (
+                 if (
                     NetworkManager.Singleton != null
                     && NetworkManager.Singleton.IsConnectedClient
                     && RoleManager.IsClientAR(NetworkManager.Singleton.LocalClientId)

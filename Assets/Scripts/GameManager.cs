@@ -41,7 +41,7 @@ public class GameManager : NetworkBehaviour
     public NetworkVariable<ulong> WinnerClientId = new NetworkVariable<ulong>(ulong.MaxValue);
     public NetworkVariable<ulong> VRClientId = new NetworkVariable<ulong>(ulong.MaxValue);
     public NetworkVariable<ulong> ARClientId = new NetworkVariable<ulong>(ulong.MaxValue);
-    private NetworkedAutoLevelGenerator _levelGeneratorInstance;
+    private NetworkedAutoLevelGenerator _levelGeneratorInstance; 
     private Transform _vrPlayerSpawnPoint;
     private bool _levelGenerated = false;
 
@@ -106,7 +106,34 @@ public class GameManager : NetworkBehaviour
         base.OnNetworkDespawn();
     }
 
-    public void RegisterLevelGenerator(NetworkedAutoLevelGenerator generator)
+    public void Server_NotifyLevelReady(GameObject levelRootObject)
+    {
+        if (!IsServer) return;
+
+        Debug.Log($"GameManager [Server]: Received Level Ready notification from level generator.");
+        _levelGenerated = true;
+
+       
+        Debug.LogWarning("GameManager [Server]: TODO: Calculate VR Spawn point CreateRoom.");
+        
+       
+        if (CurrentPhase.Value == GamePhase.Setup)
+        {
+             Debug.Log(
+                 "GameManager [Server]: Level Ready notification received while in Setup phase. Proceeding to LevelReady and starting countdown."
+             );
+             CurrentPhase.Value = GamePhase.LevelReady;
+             StartCoroutine(StartGameCountdown());
+        }
+         else
+        {
+             Debug.LogWarning(
+                 $"GameManager [Server]: Level Ready notification received but CurrentPhase is {CurrentPhase.Value}. Not starting countdown yet (will start when both players connect)."
+             );
+        }
+    }
+
+public void RegisterLevelGenerator(NetworkedAutoLevelGenerator generator)
     {
         if (!IsServer || generator == null)
             return;
@@ -213,14 +240,7 @@ public class GameManager : NetworkBehaviour
             Debug.Log("GameManager: Both players connected. Transitioning to Setup phase.");
             CurrentPhase.Value = GamePhase.Setup;
 
-            if (_levelGenerated)
-            {
-                Debug.Log(
-                    "GameManager [Server]: Level was generated before both players connected. Proceeding to LevelReady and starting countdown now."
-                );
-                CurrentPhase.Value = GamePhase.LevelReady;
-                StartCoroutine(StartGameCountdown());
-            }
+            //
         }
     }
 
@@ -311,7 +331,6 @@ public class GameManager : NetworkBehaviour
             );
         }
     }
-
     IEnumerator StartGameCountdown()
     {
         if (!IsServer)
@@ -461,10 +480,16 @@ public class GameManager : NetworkBehaviour
 
     private void OnPhaseChanged(GamePhase previous, GamePhase current)
     {
-        Debug.Log($"Client received phase change: {previous} -> {current}");
+        Debug.Log($"[{ (IsServer ? "Server" : "Client") } { NetworkManager.Singleton?.LocalClientId ?? 0 }] OnPhaseChanged: {previous} -> {current}");
+
         if (GameHUD.Instance != null)
         {
+            Debug.Log($"[{ (IsServer ? "Server" : "Client") } { NetworkManager.Singleton?.LocalClientId ?? 0 }] GameHUD.Instance found. Calling UpdatePhase({current}).");
             GameHUD.Instance.UpdatePhase(current);
+        }
+        else
+        {
+            Debug.LogError($"[{ (IsServer ? "Server" : "Client") } { NetworkManager.Singleton?.LocalClientId ?? 0 }] GameHUD.Instance is NULL when trying to update phase to {current}!");
         }
     }
 
