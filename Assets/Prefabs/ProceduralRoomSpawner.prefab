@@ -75,6 +75,8 @@ MonoBehaviour:
     type: 3}
   floorPrefab: {fileID: 1425383010550552526, guid: 7ff30c7e7a931fa4abaacbcf858e20a1,
     type: 3}
+  ceilingPrefab: {fileID: 211451091227000200, guid: 0be68b2e30380c147b7011638cd7f37a,
+    type: 3}
   roomPrefabs:
   - {fileID: 5087690157721671419, guid: c7f590bf2afaf4525bd8a73d39ac7733, type: 3}
 --- !u!65 &1734808945065314788

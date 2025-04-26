@@ -8,7 +8,7 @@ using Unity.Netcode;
 public class CreateRoom : NetworkBehaviour
 {
     public GameObject roomRoot;
-    public GameObject wallPrefab, cornerPrefab, floorPrefab;
+    public GameObject wallPrefab, cornerPrefab, floorPrefab, ceilingPrefab;
 
     public GameObject[] roomPrefabs;
     List<Transform> roomCorners = new List<Transform>();
@@ -217,6 +217,19 @@ public class CreateRoom : NetworkBehaviour
         GameObject floor = Instantiate(floorPrefab, roomRoot.transform);
         floor.transform.localPosition = new Vector3(size.x / 2, 0, size.y / 2);
         floor.transform.localScale = new Vector3(size.x, 1, size.y);
+
+        if (ceilingPrefab != null)
+        {
+            GameObject ceiling = Instantiate(ceilingPrefab, roomRoot.transform);
+            float ceilingHeight = 3f;
+            ceiling.transform.localPosition = new Vector3(-size.x / 2, ceilingHeight, -size.y / 2);
+            ceiling.transform.localScale = new Vector3(size.x, 1, size.y);
+        }
+        else
+        {
+            Debug.LogWarning("Ceiling prefab is not assigned");
+        }
+
 
         roomRoot.transform.localPosition -= new Vector3(-size.x / 2f, 0, -size.y / 2f);
     }
