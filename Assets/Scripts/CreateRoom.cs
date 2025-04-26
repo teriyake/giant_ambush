@@ -15,6 +15,8 @@ public class CreateRoom : NetworkBehaviour
     List<GameObject> roomObjects = new List<GameObject>();
     BoxCollider collider;
     Vector2 roomSize;
+    public GameObject[] scatterPrefabs; 
+    public int numberOfScatterObjects = 20;
 
     void Start(){
         /*
@@ -230,6 +232,7 @@ public class CreateRoom : NetworkBehaviour
             Debug.LogWarning("Ceiling prefab is not assigned");
         }
 
+        ScatterObjects(size);
 
         roomRoot.transform.localPosition -= new Vector3(-size.x / 2f, 0, -size.y / 2f);
     }
@@ -246,5 +249,37 @@ public class CreateRoom : NetworkBehaviour
         );
 
         return new Vector2(length, breadth);
+    }
+
+    void ScatterObjects(Vector2 size)
+    {
+        if (scatterPrefabs == null || scatterPrefabs.Length == 0)
+        {
+            Debug.LogWarning("Scatter prefabs list is empty or not assigned.");
+            return;
+        }
+
+        if (roomRoot == null) return;
+
+        float minX = -size.x;
+        float maxX = 0f;
+        float minZ = -size.y;
+        float maxZ = 0f;
+        float yPos = 0f;
+
+        for (int i = 0; i < numberOfScatterObjects; i++)
+        {
+            GameObject prefabToScatter = scatterPrefabs[Random.Range(0, scatterPrefabs.Length)];
+            Vector3 randomPosition = new Vector3(
+                Random.Range(minX, maxX),
+                yPos,
+                Random.Range(minZ, maxZ)
+            );
+
+            GameObject scatteredObj = Instantiate(prefabToScatter, roomRoot.transform);
+            scatteredObj.transform.localPosition = randomPosition;
+
+            scatteredObj.transform.localRotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+        }
     }
 }
