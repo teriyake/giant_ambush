@@ -151,11 +151,11 @@ public class ARLevelSetup : NetworkBehaviour
     {
         if (m_levelPlaceholderPrefab == null) return;
 
-        Vector3 spawnPosition = position - rotation * new Vector3(-size.x / 2f, 0, -size.y / 2f);
-        Debug.Log($"Server received procedural level spawn request from Client {rpcParams.Receive.SenderClientId} at pos {spawnPosition}, size {size}");
+        // Vector3 spawnPosition = position - rotation * new Vector3(-size.x / 2f, 0, -size.y / 2f);
+        Debug.Log($"Server received procedural level spawn request from Client {rpcParams.Receive.SenderClientId} at pos {position}, size {size}");
 
-        GameObject roomSpawnerObject = Instantiate(m_levelPlaceholderPrefab, spawnPosition, rotation);
-        roomSpawnerObject.transform.GetChild(0).gameObject.transform.position -= new Vector3(size.x * 0.5f, 0.0f, size.y * 0.5f);
+        GameObject roomSpawnerObject = Instantiate(m_levelPlaceholderPrefab, position, rotation);
+        // roomSpawnerObject.transform.GetChild(0).gameObject.transform.position -= new Vector3(size.x * 0.5f, 0.0f, size.y * 0.5f);
 
         NetworkObject networkObject = roomSpawnerObject.GetComponent<NetworkObject>();
         if (networkObject == null)
