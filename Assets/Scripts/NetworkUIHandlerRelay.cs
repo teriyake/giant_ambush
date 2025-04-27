@@ -247,7 +247,7 @@ public class NetworkUIHandlerRelay : MonoBehaviour
                             .Singleton
                             .LocalClientId;
                         Debug.Log(
-                            $"Host started. Assigned VR Giant role to Client ID: {GameManager.Instance.VRClientId.Value}"
+                            $"Host started. Assigned VR Ant role to Client ID: {GameManager.Instance.VRClientId.Value}"
                         );
                         SetStatus($"Host active. Waiting for client... Join Code: {_joinCode}");
                         Debug.LogError($"{_joinCode}");
@@ -296,7 +296,7 @@ public class NetworkUIHandlerRelay : MonoBehaviour
                     if (GameManager.Instance.ARClientId.Value == ulong.MaxValue)
                     {
                         GameManager.Instance.ARClientId.Value = clientId;
-                        Debug.Log($"Client {clientId} connected to Host. Assigned Ant role.");
+                        Debug.Log($"Client {clientId} connected to Host. Assigned Giant role.");
                         SetStatus($"Client {clientId} connected.");
                     }
                 }
@@ -312,22 +312,6 @@ public class NetworkUIHandlerRelay : MonoBehaviour
 
     void OnClientDisconnected(ulong clientId)
     {
-        bool wasVR = false;
-        bool wasAnt = false;
-
-        if (clientId == RoleManager.VRClientId)
-        {
-            RoleManager.VRClientId = ulong.MaxValue;
-            Debug.Log($"VR Giant (Client {clientId}) disconnected.");
-            wasVR = true;
-        }
-        if (clientId == RoleManager.ARClientId)
-        {
-            RoleManager.ARClientId = ulong.MaxValue;
-            Debug.Log($"Ant (Client {clientId}) disconnected.");
-            wasAnt = true;
-        }
-
         if (NetworkManager.Singleton.IsHost)
         {
             SetStatus($"Client {clientId} disconnected. Waiting for client...");

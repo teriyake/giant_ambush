@@ -13,30 +13,30 @@ public class GameHUD : MonoBehaviour
     [SerializeField]
     private TextMeshProUGUI winnerText;
 
-    public static GameHUD Instance { get; private set; }
+    // public static GameHUD Instance { get; private set; }
 
-    void Awake()
-    {
-        if (Instance != null && Instance != this)
-        {
-            Debug.LogWarning(
-                $"Duplicate GameHUD instance found on {gameObject.name}. Destroying duplicate."
-            );
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
-        Debug.Log($"GameHUD Instance assigned to {gameObject.name}");
-    }
+    // void Awake()
+    // {
+    //     if (Instance != null && Instance != this)
+    //     {
+    //         Debug.LogWarning(
+    //             $"Duplicate GameHUD instance found on {gameObject.name}. Destroying duplicate."
+    //         );
+    //         Destroy(gameObject);
+    //         return;
+    //     }
+    //     Instance = this;
+    //     Debug.Log($"GameHUD Instance assigned to {gameObject.name}");
+    // }
 
-    void OnDestroy()
-    {
-        if (Instance == this)
-        {
-            Instance = null;
-            Debug.Log($"GameHUD Instance nulled (was {gameObject.name})");
-        }
-    }
+    // void OnDestroy()
+    // {
+    //     if (Instance == this)
+    //     {
+    //         Instance = null;
+    //         Debug.Log($"GameHUD Instance nulled (was {gameObject.name})");
+    //     }
+    // }
 
     void Start()
     {
@@ -124,6 +124,8 @@ public class GameHUD : MonoBehaviour
 
     public void UpdateWinnerText(ulong winnerClientId)
     {
+                Debug.LogError($"winnerClientId: {winnerClientId} VRClientId: {GameManager.Instance.VRClientId.Value} ARClientId: {GameManager.Instance.ARClientId.Value}");
+                
         if (winnerText == null)
             return;
 

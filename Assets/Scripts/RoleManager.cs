@@ -5,16 +5,17 @@ using UnityEngine;
 
 public static class RoleManager
 {
-    public static ulong VRClientId = ulong.MaxValue;
-    public static ulong ARClientId = ulong.MaxValue;
-
     public static ulong GetVRClientId()
     {
         if (GameManager.Instance != null)
         {
             return GameManager.Instance.VRClientId.Value;
         }
-        return VRClientId;
+
+        Debug.LogWarning(
+            "RoleManager: GameManager.Instance is null, cannot get networked VRClientId."
+        );
+        return ulong.MaxValue;
     }
 
     public static ulong GetARClientId()
@@ -23,7 +24,11 @@ public static class RoleManager
         {
             return GameManager.Instance.ARClientId.Value;
         }
-        return ARClientId;
+
+        Debug.LogWarning(
+            "RoleManager: GameManager.Instance is null, cannot get networked ARClientId."
+        );
+        return ulong.MaxValue;
     }
 
     public static bool IsClientVR(ulong clientId)

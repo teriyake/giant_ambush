@@ -73,18 +73,18 @@ public class GameManager : NetworkBehaviour
         RoundTimer.OnValueChanged += OnTimerChanged;
         WinnerClientId.OnValueChanged += OnWinnerDetermined;
 
-        if (GameHUD.Instance != null)
+        if (UIManager.Instance != null)
         {
-            GameHUD.Instance.UpdatePhase(CurrentPhase.Value);
-            GameHUD.Instance.UpdateTimer(RoundTimer.Value);
-            GameHUD.Instance.UpdateWinnerText(WinnerClientId.Value);
+            UIManager.Instance.UpdatePhase(CurrentPhase.Value);
+            UIManager.Instance.UpdateTimer(RoundTimer.Value);
+            UIManager.Instance.UpdateWinnerText(WinnerClientId.Value);
         }
 
         if (PlatformRoleManager.Instance != null)
             {
-                Debug.Log(
-                    $"PlayerMovement (Owner: {OwnerClientId}): Platform not ready yet. Subscribing to OnPlatformReady event."
-                );
+                // Debug.Log(
+                //     $"PlayerMovement (Owner: {OwnerClientId}): Platform not ready yet. Subscribing to OnPlatformReady event."
+                // );
                 // PlatformRoleManager.Instance.OnPlatformReady += ConfigureARCameraCulling;
             }
             else
@@ -327,7 +327,7 @@ public class GameManager : NetworkBehaviour
             if (VROriginGO != null)
             {
                 Debug.Log(
-                    $"GameManager: Moving VR Player (Client {RoleManager.VRClientId}, VR Origin: {VROriginGO.name}) to spawn point."
+                    $"GameManager: Moving VR Player (Client {RoleManager.GetVRClientId()}, VR Origin: {VROriginGO.name}) to spawn point."
                 );
                 VROriginGO.transform.position = _vrPlayerSpawnPoint.position;
                 // VROriginGO.transform.rotation = _vrPlayerSpawnPoint.rotation;
@@ -386,7 +386,7 @@ public class GameManager : NetworkBehaviour
                 if (RoundTimer.Value <= 0)
                 {
                     Debug.Log("GameManager: Timer expired. Ant wins.");
-                    EndGame(RoleManager.ARClientId);
+                    EndGame(RoleManager.GetVRClientId());
                 }
                 break;
             case GamePhase.GameOver:
@@ -498,33 +498,33 @@ public class GameManager : NetworkBehaviour
             $"[{(IsServer ? "Server" : "Client")} {NetworkManager.Singleton?.LocalClientId ?? 0}] OnPhaseChanged: {previous} -> {current}"
         );
 
-        if (GameHUD.Instance != null)
+        if (UIManager.Instance != null)
         {
             Debug.Log(
-                $"[{(IsServer ? "Server" : "Client")} {NetworkManager.Singleton?.LocalClientId ?? 0}] GameHUD.Instance found. Calling UpdatePhase({current})."
+                $"[{(IsServer ? "Server" : "Client")} {NetworkManager.Singleton?.LocalClientId ?? 0}] UIManager.Instance found. Calling UpdatePhase({current})."
             );
-            GameHUD.Instance.UpdatePhase(current);
+            UIManager.Instance.UpdatePhase(current);
         }
         else
         {
             Debug.LogError(
-                $"[{(IsServer ? "Server" : "Client")} {NetworkManager.Singleton?.LocalClientId ?? 0}] GameHUD.Instance is NULL when trying to update phase to {current}!"
+                $"[{(IsServer ? "Server" : "Client")} {NetworkManager.Singleton?.LocalClientId ?? 0}] UIManager.Instance is NULL when trying to update phase to {current}!"
             );
         }
     }
 
     private void OnTimerChanged(float previous, float current)
     {
-        if (GameHUD.Instance != null)
-            GameHUD.Instance.UpdateTimer(current);
+        if (UIManager.Instance != null)
+            UIManager.Instance.UpdateTimer(current);
     }
 
     private void OnWinnerDetermined(ulong previous, ulong current)
     {
         Debug.Log($"Client received winner update: Client {current}");
-        if (GameHUD.Instance != null)
+        if (UIManager.Instance != null)
         {
-            GameHUD.Instance.UpdateWinnerText(current);
+            UIManager.Instance.UpdateWinnerText(current);
         }
     }
 
