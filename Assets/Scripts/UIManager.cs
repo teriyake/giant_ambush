@@ -183,7 +183,16 @@ public class UIManager : MonoBehaviour
             }
         }
 
-        if (activeHud == null)
+        if (activeHud != null)
+        {
+            if (GameManager.Instance != null)
+            {
+                UpdatePhase(GameManager.Instance.CurrentPhase.Value);
+                UpdateTimer(GameManager.Instance.RoundTimer.Value);
+                UpdateWinnerText(GameManager.Instance.WinnerClientId.Value);
+            }
+        }
+        else
         {
             Debug.LogError("UIManager: Failed to assign an active HUD!");
         }

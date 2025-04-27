@@ -2194,6 +2194,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4795066115803801811, guid: dd36fc4764caf8a47ab851a1f436feca,
         type: 3}
+      propertyPath: field of view
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795066115803801811, guid: dd36fc4764caf8a47ab851a1f436feca,
+        type: 3}
+      propertyPath: far clip plane
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795066115803801811, guid: dd36fc4764caf8a47ab851a1f436feca,
+        type: 3}
       propertyPath: m_BackGroundColor.b
       value: 0.285
       objectReference: {fileID: 0}
@@ -2211,6 +2221,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_CullingMask.m_Bits
       value: 1073742263
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795066115987639194, guid: dd36fc4764caf8a47ab851a1f436feca,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795066116098806305, guid: dd36fc4764caf8a47ab851a1f436feca,
+        type: 3}
+      propertyPath: m_MoveSpeed
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4795066116098806310, guid: dd36fc4764caf8a47ab851a1f436feca,
+        type: 3}
+      propertyPath: m_TurnSpeed
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 4795066116272624333, guid: dd36fc4764caf8a47ab851a1f436feca,
         type: 3}
