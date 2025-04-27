@@ -178,8 +178,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a47cfc3dbe4274692965184effc9c08b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_hostMaterial: {fileID: 2100000, guid: 69629fbc6881d4dcfaa20d98d43ca3dd, type: 2}
-  m_clientMaterial: {fileID: 2100000, guid: 76eca8d0c847a40aebcddeb99e9475e3, type: 2}
+  m_hostMaterial: {fileID: 586645097001841572, guid: d7b0f70344f40ee48a3e29a4cf4b093c,
+    type: 3}
+  m_hostMesh: {fileID: -915712872417006085, guid: d7b0f70344f40ee48a3e29a4cf4b093c,
+    type: 3}
+  m_clientMaterial: {fileID: -382652638819485698, guid: f396e3429a4864fc2ad497cb3ce5fe2c,
+    type: 3}
+  m_clientMesh: {fileID: -1429159947720998640, guid: 3e37f6d84a91a56469b2a29089adff20,
+    type: 3}
 --- !u!114 &-8816772605445369397
 MonoBehaviour:
   m_ObjectHideFlags: 0
