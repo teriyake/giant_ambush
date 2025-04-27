@@ -124,8 +124,6 @@ public class GameHUD : MonoBehaviour
 
     public void UpdateWinnerText(ulong winnerClientId)
     {
-                Debug.LogError($"winnerClientId: {winnerClientId} VRClientId: {GameManager.Instance.VRClientId.Value} ARClientId: {GameManager.Instance.ARClientId.Value}");
-                
         if (winnerText == null)
             return;
 
