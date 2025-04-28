@@ -108,9 +108,9 @@ BoxCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
+  m_Size: {x: 0.2, y: 0.2, z: 0.2}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &2866895438108857331
 MonoBehaviour:
@@ -180,9 +180,8 @@ MonoBehaviour:
     type: 3}
   m_hostMesh: {fileID: -915712872417006085, guid: d7b0f70344f40ee48a3e29a4cf4b093c,
     type: 3}
-  m_clientMaterial: {fileID: -382652638819485698, guid: f396e3429a4864fc2ad497cb3ce5fe2c,
-    type: 3}
-  m_clientMesh: {fileID: -1429159947720998640, guid: 3e37f6d84a91a56469b2a29089adff20,
+  m_clientMaterial: {fileID: 2100000, guid: cf66b3967b44b2c498dea0e015a65969, type: 2}
+  m_clientMesh: {fileID: -7191365344747343327, guid: 511ae3cff5b97bb46a037e013d2a228b,
     type: 3}
 --- !u!114 &-8816772605445369397
 MonoBehaviour:
