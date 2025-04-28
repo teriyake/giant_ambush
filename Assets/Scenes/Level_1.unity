@@ -2256,12 +2256,12 @@ PrefabInstance:
     - target: {fileID: 4795066116272624329, guid: dd36fc4764caf8a47ab851a1f436feca,
         type: 3}
       propertyPath: m_Height
-      value: 0.1
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: 4795066116272624329, guid: dd36fc4764caf8a47ab851a1f436feca,
         type: 3}
       propertyPath: m_Radius
-      value: 0.1
+      value: 0.01
       objectReference: {fileID: 0}
     - target: {fileID: 4795066116272624329, guid: dd36fc4764caf8a47ab851a1f436feca,
         type: 3}
