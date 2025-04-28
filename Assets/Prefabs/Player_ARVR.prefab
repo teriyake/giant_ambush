@@ -66,9 +66,6 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -127,7 +124,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 4157037343
+  GlobalObjectIdHash: 2635813401
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -201,7 +198,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_interactableLayer:
     serializedVersion: 2
-    m_Bits: 1073742807
+    m_Bits: 1073742547
   m_maxInteractionDistance: 50
   m_playerCamera: {fileID: 0}
 --- !u!114 &1631736293786552838
@@ -329,6 +326,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   antPlayerTransform: {fileID: 2070568734213135866}
+  speedThreshold: 0.01
+  maxSpawnRate: 400
 --- !u!4 &7388036641560270041 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7316325868433881543, guid: f4c26355cb4d886429adf59909ec37c0,
