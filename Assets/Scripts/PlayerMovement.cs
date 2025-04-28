@@ -12,6 +12,11 @@ public class PlayerMovement : NetworkBehaviour
     [HideInInspector]
     public Transform m_cameraToTrack;
 
+    [SerializeField]
+    private GameObject antTrailVisualObject;
+    private AntTrailController antTrailController;
+    private bool _hasInitializedTrail = false;
+
     private Transform m_playerObjectTransform;
     private bool m_isTracking = false;
     private NetworkTransform m_networkTransform;
@@ -59,6 +64,116 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
 
+    void Start()
+    {
+        if (antTrailVisualObject != null)
+        {
+            antTrailController = antTrailVisualObject.GetComponent<AntTrailController>();
+            if (antTrailController == null)
+            {
+                Debug.LogError(
+                    $"PlayerMovement ({OwnerClientId}): AntTrailController script not found on the assigned Ant Trail Visual Object!",
+                    antTrailVisualObject
+                );
+                antTrailVisualObject.SetActive(false);
+                return;
+            }
+            antTrailVisualObject.SetActive(false);
+        }
+        else
+        {
+            Debug.LogError(
+                $"PlayerMovement ({OwnerClientId}): Ant Trail Visual Object is not assigned in the Inspector!",
+                this
+            );
+            return;
+        }
+
+        StartCoroutine(WaitForGameManagerAndSubscribeRoles());
+    }
+
+    private IEnumerator WaitForGameManagerAndSubscribeRoles()
+    {
+        while (GameManager.Instance == null)
+        {
+            yield return null;
+        }
+
+        GameManager.Instance.VRClientId.OnValueChanged += OnRoleAssignedCheck;
+        GameManager.Instance.ARClientId.OnValueChanged += OnRoleAssignedCheck;
+
+        CheckAndSetupAntTrail();
+    }
+
+    private void OnRoleAssignedCheck(ulong previousValue, ulong newValue)
+    {
+        CheckAndSetupAntTrail();
+    }
+
+    private void CheckAndSetupAntTrail()
+    {
+        if (_hasInitializedTrail || GameManager.Instance == null || antTrailController == null)
+        {
+            return;
+        }
+
+        ulong vrId = GameManager.Instance.VRClientId.Value;
+        ulong arId = GameManager.Instance.ARClientId.Value;
+
+        if (vrId == ulong.MaxValue || arId == ulong.MaxValue)
+        {
+            return;
+        }
+
+        bool shouldShowTrail = false;
+        if (!IsOwner)
+        {
+            bool isThisAvatarTheAnt = RoleManager.IsClientVR(OwnerClientId);
+
+            bool isLocalObserverTheGiant = RoleManager.IsClientAR(
+                NetworkManager.Singleton.LocalClientId
+            );
+
+            if (isThisAvatarTheAnt && isLocalObserverTheGiant)
+            {
+                shouldShowTrail = true;
+                Debug.Log(
+                    $"PlayerMovement ({OwnerClientId}): Role check PASSED. This is the Ant's avatar, and I ({NetworkManager.Singleton.LocalClientId}) am the Giant. Activating trail.",
+                    this
+                );
+            }
+            else
+            {
+                Debug.Log(
+                    $"PlayerMovement ({OwnerClientId}): Role check complete. Trail not needed. Is Ant Avatar: {isThisAvatarTheAnt}, Is Observer Giant: {isLocalObserverTheGiant}",
+                    this
+                );
+            }
+        }
+        else
+        {
+            Debug.Log(
+                $"PlayerMovement ({OwnerClientId}): Role check skipped (IsOwner=true). Trail not needed for self.",
+                this
+            );
+        }
+
+        if (shouldShowTrail)
+        {
+            antTrailVisualObject.SetActive(true);
+            antTrailController.InitializeTrail(this.transform);
+        }
+        else
+        {
+            antTrailVisualObject.SetActive(false);
+        }
+
+        _hasInitializedTrail = true;
+
+        GameManager.Instance.VRClientId.OnValueChanged -= OnRoleAssignedCheck;
+        GameManager.Instance.ARClientId.OnValueChanged -= OnRoleAssignedCheck;
+    }
+
     private void InitializeCameraTracking()
     {
         if (!IsOwner || m_isTracking)
@@ -93,17 +208,81 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
 
+    private void SetupAntTrail()
+    {
+        if (antTrailVisualObject == null)
+        {
+            Debug.LogError(
+                $"PlayerMovement ({OwnerClientId}): Ant Trail Visual Object is not assigned in the Inspector!",
+                this
+            );
+            return;
+        }
+
+        antTrailController = antTrailVisualObject.GetComponent<AntTrailController>();
+        if (antTrailController == null)
+        {
+            Debug.LogError(
+                $"PlayerMovement ({OwnerClientId}): AntTrailController script not found on the assigned Ant Trail Visual Object!",
+                antTrailVisualObject
+            );
+            antTrailVisualObject.SetActive(false);
+            return;
+        }
+
+        bool shouldShowTrail = false;
+        if (!IsOwner)
+        {
+            bool isThisAvatarTheAnt = RoleManager.IsClientVR(OwnerClientId);
+
+            bool isLocalObserverTheGiant = RoleManager.IsClientAR(
+                NetworkManager.Singleton.LocalClientId
+            );
+
+            if (isThisAvatarTheAnt && isLocalObserverTheGiant)
+            {
+                shouldShowTrail = true;
+                Debug.Log(
+                    $"PlayerMovement ({OwnerClientId}): This is the Ant's avatar, and I ({NetworkManager.Singleton.LocalClientId}) am the Giant. Activating trail.",
+                    this
+                );
+            }
+        }
+
+        if (shouldShowTrail)
+        {
+            antTrailVisualObject.SetActive(true);
+            antTrailController.InitializeTrail(this.transform);
+        }
+        else
+        {
+            antTrailVisualObject.SetActive(false);
+            if (antTrailController.enabled)
+                antTrailController.StopTrail();
+        }
+    }
+
     public override void OnNetworkDespawn()
     {
         if (IsOwner && PlatformRoleManager.Instance != null)
         {
             PlatformRoleManager.Instance.OnPlatformReady -= InitializeCameraTracking;
         }
+        if (antTrailController != null && antTrailController.enabled)
+        {
+            antTrailController.StopTrail();
+        }
+        if (antTrailVisualObject != null)
+        {
+            antTrailVisualObject.SetActive(false);
+        }
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.VRClientId.OnValueChanged -= OnRoleAssignedCheck;
+            GameManager.Instance.ARClientId.OnValueChanged -= OnRoleAssignedCheck;
+        }
         base.OnNetworkDespawn();
     }
-
-    // Start is called before the first frame update
-    void Start() { }
 
     // Update is called once per frame
     void Update()
@@ -137,6 +316,14 @@ public class PlayerMovement : NetworkBehaviour
         if (IsOwner && PlatformRoleManager.Instance != null)
         {
             PlatformRoleManager.Instance.OnPlatformReady -= InitializeCameraTracking;
+        }
+        if (antTrailController != null)
+        {
+            antTrailController.StopTrail();
+        }
+        if (antTrailVisualObject != null)
+        {
+            antTrailVisualObject.SetActive(false);
         }
         base.OnDestroy();
     }
