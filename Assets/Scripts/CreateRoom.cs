@@ -336,7 +336,7 @@ public class CreateRoom : NetworkBehaviour
         float maxX = 0f;
         float minZ = -size.y;
         float maxZ = 0f;
-        float yPos = 0f;
+        float yPos = 0.1f;
 
         int numberOfScatterObjects = Mathf.CeilToInt(Mathf.Max(size.x, size.y));
         Debug.Log($"Scattering {numberOfScatterObjects} objects...");
