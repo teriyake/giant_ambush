@@ -23,6 +23,23 @@ public class AntLocomotion : MonoBehaviour
     [SerializeField]
     private float sensitivity = 1.0f;
 
+    [Header("Climbing Settings")]
+    [SerializeField]
+    private bool enableVerticalRedirect = true;
+
+    [SerializeField]
+    private float climbingSpeedMultiplier = 1.0f;
+
+    [SerializeField]
+    private float minHorizontalMoveForClimb = 0.1f;
+
+    [Header("Gravity Settings")]
+    [SerializeField]
+    private float gravityValue = -9.81f;
+
+    [SerializeField]
+    private float groundingForce = -1.0f;
+
     private CharacterController characterController;
     private XROrigin xrOrigin;
 
@@ -32,6 +49,9 @@ public class AntLocomotion : MonoBehaviour
     private Vector3 grabStartPositionRight_World;
     private Vector3 playerStartPositionOnGrabLeft_World;
     private Vector3 playerStartPositionOnGrabRight_World;
+
+    private CollisionFlags lastCollisionFlags;
+    private float verticalVelocity = 0f;
 
     void Awake()
     {
@@ -71,6 +91,7 @@ public class AntLocomotion : MonoBehaviour
     {
         leftGripAction.action.Enable();
         rightGripAction.action.Enable();
+        verticalVelocity = 0f;
     }
 
     void OnDisable()
@@ -86,18 +107,73 @@ public class AntLocomotion : MonoBehaviour
 
     void Update()
     {
+        bool isGrounded = characterController.isGrounded;
+
+        if (isGrounded && verticalVelocity < 0)
+        {
+            verticalVelocity = groundingForce;
+        }
+        else
+        {
+            verticalVelocity += gravityValue * Time.deltaTime;
+        }
+
         if (!isGrabbingLeft && !isGrabbingRight)
         {
             return;
         }
 
-        Vector3 movementDelta = CalculateMovement();
-
-        if (characterController != null && movementDelta != Vector3.zero)
+        Vector3 movementDelta = Vector3.zero;
+        if (isGrabbingLeft || isGrabbingRight)
         {
-            movementDelta *= sensitivity;
+            movementDelta = CalculateMovement();
+        }
+        Vector3 combinedMoveVector = movementDelta * sensitivity;
+        combinedMoveVector.y += verticalVelocity * Time.deltaTime;
 
-            characterController.Move(movementDelta);
+        if (characterController != null)
+        {
+            if (combinedMoveVector != Vector3.zero || !isGrounded)
+            {
+                lastCollisionFlags = characterController.Move(combinedMoveVector);
+
+                if (!isGrounded && characterController.isGrounded && verticalVelocity < 0)
+                {
+                    verticalVelocity = groundingForce;
+                }
+            }
+            else
+            {
+                lastCollisionFlags = characterController.collisionFlags;
+            }
+
+            if (
+                enableVerticalRedirect
+                && (lastCollisionFlags & CollisionFlags.Sides) != 0
+                && (isGrabbingLeft || isGrabbingRight)
+            )
+            {
+                Vector3 horizontalIntention = new Vector3(movementDelta.x, 0f, movementDelta.z);
+                float horizontalMagnitudePerFrame = horizontalIntention.magnitude * sensitivity;
+
+                if (horizontalMagnitudePerFrame / Time.deltaTime >= minHorizontalMoveForClimb)
+                {
+                    float climbDisplacement = horizontalMagnitudePerFrame * climbingSpeedMultiplier;
+
+                    CollisionFlags climbFlags = characterController.Move(
+                        Vector3.up * climbDisplacement
+                    );
+
+                    if ((climbFlags & CollisionFlags.Above) == 0 && climbDisplacement > 0)
+                    {
+                        verticalVelocity = Mathf.Max(verticalVelocity, 0f);
+                    }
+
+                    lastCollisionFlags |= (
+                        climbFlags & (CollisionFlags.Above | CollisionFlags.Below)
+                    );
+                }
+            }
 
             if (isGrabbingLeft)
             {
