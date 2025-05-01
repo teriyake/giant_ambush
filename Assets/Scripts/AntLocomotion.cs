@@ -108,17 +108,45 @@ public class AntLocomotion : MonoBehaviour
     void Update()
     {
         Vector3 movementDelta = Vector3.zero;
-        if (isGrabbingLeft || isGrabbingRight)
+        bool isGripping = isGrabbingLeft || isGrabbingRight;
+        if (isGripping)
         {
             movementDelta = CalculateMovement();
         }
         float intendedVerticalPullThisFrame = movementDelta.y * sensitivity;
 
         bool isGrounded = characterController.isGrounded;
-        if (intendedVerticalPullThisFrame > 0.01f)
+        if (isGrounded)
         {
-            verticalVelocity = Mathf.Max(verticalVelocity, gravityValue * Time.deltaTime); // make climbing vertically slightly easier
+            // grounded case
+            if (verticalVelocity < 0f)
+            {
+                verticalVelocity = groundingForce;
+            }
         }
+        else
+        {
+            // airborne case
+            if (isGripping)
+            {
+                if (intendedVerticalPullThisFrame > 0.01f)
+                {
+                    // player actively climbing
+                    verticalVelocity = Mathf.Max(verticalVelocity, gravityValue * Time.deltaTime); // make climbing vertically slightly easier
+                }
+                else
+                {
+                    // player trying to hold onto the vertical surface
+                    verticalVelocity = -0.1f; // or 0f?
+                }
+            }
+            else
+            {
+                // player just let go
+                verticalVelocity += gravityValue * Time.deltaTime;
+            }
+        }
+        if (intendedVerticalPullThisFrame > 0.01f) { }
 
         if (isGrounded && verticalVelocity < 0)
         {
@@ -166,7 +194,7 @@ public class AntLocomotion : MonoBehaviour
             if (
                 enableVerticalRedirect
                 && (lastCollisionFlags & CollisionFlags.Sides) != 0
-                && (isGrabbingLeft || isGrabbingRight)
+                && (isGripping)
             )
             {
                 Vector3 horizontalIntention = new Vector3(movementDelta.x, 0f, movementDelta.z);
