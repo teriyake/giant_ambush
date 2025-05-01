@@ -124,9 +124,10 @@ public class ARLevelSetup : NetworkBehaviour
             // LogPlaneDetails(m_raycastHits[0]);
 
             m_anchorPose = hitPose;
+            Vector3 arTapWorldPosition = hitPose.position;
 
             Debug.Log($"ARLevelSetup: Requesting procedural level spawn with Size: {planeSize} at Pose: {hitPose.position}, {hitPose.rotation.eulerAngles}");
-            RequestLevelSpawnServerRpc(plane.center, plane.transform.rotation, planeSize);
+            RequestLevelSpawnServerRpc(plane.center, plane.transform.rotation, planeSize, hitPose.position);
 
             m_levelSpawned = true;
             // m_canAttemptSpawn = false;
@@ -147,7 +148,7 @@ public class ARLevelSetup : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = true)]
-    private void RequestLevelSpawnServerRpc(Vector3 position, Quaternion rotation, Vector2 size, ServerRpcParams rpcParams = default)
+    private void RequestLevelSpawnServerRpc(Vector3 position, Quaternion rotation, Vector2 size, Vector3 arTapPosition, ServerRpcParams rpcParams = default)
     {
         if (m_levelPlaceholderPrefab == null) return;
 
@@ -163,6 +164,15 @@ public class ARLevelSetup : NetworkBehaviour
             Debug.LogError("ServerRpc (RequestLevelSpawn): Spawned room spawner object is missing NetworkObject component!");
             Destroy(roomSpawnerObject);
             return;
+        }
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.Server_SetLastARTapPosition(arTapPosition);
+        }
+        else
+        {
+            Debug.LogError("ARLevelSetup: GameManager instance not found on server to store AR tap position!");
         }
 
         networkObject.Spawn(true);

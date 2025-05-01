@@ -42,8 +42,8 @@ public class GameHUD : MonoBehaviour
     {
         if (timerText != null)
             timerText.text = "00:00";
-        if (statusText != null)
-            statusText.text = "Waiting...";
+        // if (statusText != null)
+            // statusText.text = "Waiting...";
         if (winnerText != null)
             winnerText.gameObject.SetActive(false);
     }

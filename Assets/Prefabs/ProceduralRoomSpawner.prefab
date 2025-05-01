@@ -80,14 +80,14 @@ MonoBehaviour:
   roomPrefabs:
   - {fileID: 5087690157721671419, guid: c7f590bf2afaf4525bd8a73d39ac7733, type: 3}
   scatterPrefabs:
-  - {fileID: -927199367670048503, guid: 77348b45d10d5804f974afd3b7582bfc, type: 3}
-  - {fileID: 2447099228734753321, guid: a900f1c22e5d88743b2dcfab96b6a24c, type: 3}
+  - {fileID: 4927358655439484529, guid: 64c1ca436cc9f024b948da169e23de04, type: 3}
+  - {fileID: 4079829827082272207, guid: ee96ae14708602d469d22f53342f354e, type: 3}
   - {fileID: 3315489266759930359, guid: f355da60777d10946920a8b633e6b316, type: 3}
   - {fileID: 4113414644792422519, guid: 07ed13550a76cd2429958ba8f43d7c0e, type: 3}
-  - {fileID: 4927358655439484529, guid: 64c1ca436cc9f024b948da169e23de04, type: 3}
-  - {fileID: 712043609319385231, guid: a07dffe36c92aec44a95c900438af993, type: 3}
+  - {fileID: 7229012000543011825, guid: 30971ea7d19a057458bf89e85d9d1f6c, type: 3}
+  - {fileID: 1248434477200255633, guid: dc35c61ecac9f3e4ea7e96c2ce7f1218, type: 3}
   - {fileID: 9112034284639769819, guid: ea0853a3b2545524481b0c984f27afd1, type: 3}
-  - {fileID: 848855371842692032, guid: 16f915d1f07f10f4dad53e9e66e98afa, type: 3}
+  - {fileID: 2779473631073534170, guid: 10a3779e5a6dba14c80e8ae762c9a3ac, type: 3}
   - {fileID: 6436064586063943877, guid: f76c0046fe9320845991ccc887dd6674, type: 3}
   scatterOverlapLayerMask:
     serializedVersion: 2

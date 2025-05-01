@@ -28,6 +28,7 @@ public class PlayerAppearance : NetworkBehaviour
 
     private Renderer m_objectRenderer;
     private MeshFilter m_meshFilter;
+    private bool m_isGloballyVisible = false;
 
     void Awake()
     {
@@ -72,12 +73,65 @@ public class PlayerAppearance : NetworkBehaviour
         }
 
         ApplyAppearance(m_useHostAppearance.Value);
+
+        SetVisibility(false);
+        if (GameManager.Instance != null)
+        {
+            HandlePhaseChange(GamePhase.WaitingForPlayers, GameManager.Instance.CurrentPhase.Value);
+            GameManager.Instance.CurrentPhase.OnValueChanged += HandlePhaseChange;
+        }
+        else
+        {
+            StartCoroutine(WaitForGameManagerAndSubscribe());
+        }
     }
 
     public override void OnNetworkDespawn()
     {
         m_useHostAppearance.OnValueChanged -= OnAppearanceChanged;
     }
+
+    private IEnumerator WaitForGameManagerAndSubscribe()
+    {
+        while (GameManager.Instance == null)
+        {
+            yield return null;
+        }
+        HandlePhaseChange(GamePhase.WaitingForPlayers, GameManager.Instance.CurrentPhase.Value);
+        GameManager.Instance.CurrentPhase.OnValueChanged += HandlePhaseChange;
+    }
+
+    private void HandlePhaseChange(GamePhase previousPhase, GamePhase currentPhase)
+    {
+        bool shouldBeVisible = currentPhase == GamePhase.LevelReady ||
+                               currentPhase == GamePhase.Countdown ||
+                               currentPhase == GamePhase.Playing;
+
+        Debug.Log($"PlayerAppearance ({NetworkObjectId}) HandlePhaseChange: {currentPhase}. ShouldBeVisible: {shouldBeVisible}");
+        SetVisibility(shouldBeVisible);
+    }
+
+    public void SetVisibility(bool visible)
+    {
+        m_isGloballyVisible = visible;
+
+        ApplyVisibility();
+    }
+
+    private void ApplyVisibility()
+    {
+        if (m_objectRenderer == null) return;
+
+        if (IsOwner)
+        {
+            m_objectRenderer.enabled = false;
+        }
+        else
+        {
+            m_objectRenderer.enabled = m_isGloballyVisible;
+        }
+    }
+
 
     private void OnAppearanceChanged(bool previousValue, bool newValue)
     {
@@ -119,5 +173,7 @@ public class PlayerAppearance : NetworkBehaviour
                 this
             );
         }
+
+        ApplyVisibility();
     }
 }

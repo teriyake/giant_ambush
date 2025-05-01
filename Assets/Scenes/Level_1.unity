@@ -2439,7 +2439,12 @@ MonoBehaviour:
     type: 3}
   rightGripAction: {fileID: 15759602096507913, guid: c348712bda248c246b8c49b3db54643f,
     type: 3}
-  sensitivity: 1
+  sensitivity: 0.3
+  enableVerticalRedirect: 1
+  climbingSpeedMultiplier: 1
+  minHorizontalMoveForClimb: 0.1
+  gravityValue: -9.81
+  groundingForce: -1
 --- !u!1 &1573746282
 GameObject:
   m_ObjectHideFlags: 0

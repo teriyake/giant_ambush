@@ -23,6 +23,14 @@ public class CreateRoom : NetworkBehaviour
         }
     }
 
+    public struct ScatterPointInfo
+    {
+        public Vector3 WorldPosition;
+        public Quaternion WorldRotation;
+        public Bounds WorldBounds;
+        public int PrefabIndex;
+    }
+
     public GameObject roomRoot;
     public GameObject wallPrefab,
         cornerPrefab,
@@ -82,13 +90,42 @@ public class CreateRoom : NetworkBehaviour
         if (!IsServer)
             return;
 
+        this.roomSize = size;
+
         ConstructRoomClientRpc(size);
 
         GenerateScatteredObjectsData(size, out List<ScatteredObjectData> scatteredObjectsDataList);
+        List<ScatterPointInfo> worldScatterInfo = CalculateWorldScatterInfo(
+            scatteredObjectsDataList
+        );
 
         InstantiateScatteredObjectsClientRpc(scatteredObjectsDataList.ToArray());
 
-        GameManager.Instance?.Server_NotifyLevelReady(roomRoot);
+        GameManager.Instance?.Server_NotifyLevelReady(this, worldScatterInfo);
+    }
+
+    public Bounds GetWorldBounds()
+    {
+        Bounds worldBounds;
+        Collider floorCollider = roomRoot.GetComponentInChildren<Collider>();
+        if (floorCollider != null)
+        {
+            return floorCollider.bounds;
+        }
+        else
+        {
+            Debug.LogWarning(
+                "CreateRoom: Could not find floor collider for bounds calculation. Estimating."
+            );
+            Vector3 worldCenter =
+                transform.position
+                + transform.rotation * new Vector3(-roomSize.x / 2f, 0.1f, -roomSize.y / 2f);
+            Vector3 worldSize = new Vector3(roomSize.x, 0.2f, roomSize.y);
+            worldBounds = new Bounds(worldCenter, worldSize);
+
+            Debug.Log($"CreateRoom: World Bounds = {worldBounds}");
+            return worldBounds;
+        }
     }
 
     [ClientRpc]
@@ -338,7 +375,7 @@ public class CreateRoom : NetworkBehaviour
         float maxZ = 0f;
         float yPos = 0.1f;
 
-        int numberOfScatterObjects = Mathf.CeilToInt(Mathf.Max(size.x, size.y));
+        int numberOfScatterObjects = Mathf.FloorToInt(Mathf.CeilToInt(Mathf.Max(size.x, size.y)) * Mathf.CeilToInt(Mathf.Min(size.x, size.y)) / 2);
         Debug.Log($"Scattering {numberOfScatterObjects} objects...");
 
         int maxPlacementAttemptsPerObject = 20;
@@ -518,6 +555,145 @@ public class CreateRoom : NetworkBehaviour
         Debug.Log(
             $"Generated data for {scatteredObjects.Count}/{numberOfScatterObjects} scattered objects."
         );
+    }
+
+    private List<ScatterPointInfo> CalculateWorldScatterInfo(
+        List<ScatteredObjectData> localDataList
+    )
+    {
+        List<ScatterPointInfo> worldInfoList = new List<ScatterPointInfo>();
+        if (scatterPrefabs == null || scatterPrefabs.Length == 0 || roomRoot == null)
+        {
+            return worldInfoList;
+        }
+
+        foreach (var localData in localDataList)
+        {
+            if (localData.prefabIndex < 0 || localData.prefabIndex >= scatterPrefabs.Length)
+                continue;
+
+            GameObject prefab = scatterPrefabs[localData.prefabIndex];
+            Vector3 worldPos = roomRoot.transform.TransformPoint(localData.localPosition);
+            Quaternion worldRot = roomRoot.transform.rotation * localData.localRotation;
+
+            Vector3 rootWorldScale = prefab.transform.lossyScale;
+            Collider[] allColliders = prefab.GetComponentsInChildren<Collider>();
+
+            if (allColliders.Length == 0)
+            {
+                worldInfoList.Add(
+                    new ScatterPointInfo
+                    {
+                        WorldPosition = worldPos,
+                        WorldRotation = worldRot,
+                        WorldBounds = new Bounds(worldPos, Vector3.one * 0.1f),
+                        PrefabIndex = localData.prefabIndex,
+                    }
+                );
+                continue;
+            }
+
+            Bounds combinedBounds = CalculateSingleColliderWorldBounds(
+                allColliders[0],
+                prefab.transform,
+                worldPos,
+                worldRot,
+                rootWorldScale
+            );
+
+            for (int i = 1; i < allColliders.Length; i++)
+            {
+                Bounds individualBounds = CalculateSingleColliderWorldBounds(
+                    allColliders[i],
+                    prefab.transform,
+                    worldPos,
+                    worldRot,
+                    rootWorldScale
+                );
+                combinedBounds.Encapsulate(individualBounds);
+            }
+
+            worldInfoList.Add(
+                new ScatterPointInfo
+                {
+                    WorldPosition = worldPos,
+                    WorldRotation = worldRot,
+                    WorldBounds = combinedBounds,
+                    PrefabIndex = localData.prefabIndex,
+                }
+            );
+        }
+        return worldInfoList;
+    }
+
+    private Bounds CalculateSingleColliderWorldBounds(
+        Collider singleCollider,
+        Transform prefabRootTransform,
+        Vector3 targetWorldPos,
+        Quaternion targetWorldRot,
+        Vector3 targetWorldScale
+    )
+    {
+        Vector3 localCenter = Vector3.zero;
+        Vector3 localSize = Vector3.one * 0.01f;
+        bool boundsFound = true;
+
+        if (singleCollider is BoxCollider box)
+        {
+            localCenter = box.center;
+            localSize = box.size;
+        }
+        else if (singleCollider is SphereCollider sphere)
+        {
+            localCenter = sphere.center;
+            float diameter = sphere.radius * 2f;
+            localSize = Vector3.one * diameter;
+        }
+        else if (singleCollider is CapsuleCollider capsule)
+        {
+            localCenter = capsule.center;
+            float height = capsule.height;
+            float radius = capsule.radius;
+            float sizeX = radius * 2f;
+            float sizeY = height;
+            float sizeZ = radius * 2f;
+            if (capsule.direction == 0)
+            {
+                sizeX = height;
+                sizeY = radius * 2f;
+            }
+            else if (capsule.direction == 2)
+            {
+                sizeZ = height;
+                sizeY = radius * 2f;
+            }
+            localSize = new Vector3(sizeX, sizeY, sizeZ);
+        }
+        else if (singleCollider is MeshCollider meshCollider && meshCollider.sharedMesh != null)
+        {
+            localCenter = meshCollider.sharedMesh.bounds.center;
+            localSize = meshCollider.sharedMesh.bounds.size;
+        }
+        else
+        {
+            boundsFound = false;
+            localCenter = Vector3.zero;
+            localSize = Vector3.one * 0.01f;
+        }
+
+        Transform colliderTransform = singleCollider.transform;
+        Vector3 relativePos = colliderTransform.position - prefabRootTransform.position;
+        Quaternion relativeRot =
+            Quaternion.Inverse(prefabRootTransform.rotation) * colliderTransform.rotation;
+
+        Vector3 colliderWorldPos = targetWorldPos + targetWorldRot * relativePos;
+        Quaternion colliderWorldRot = targetWorldRot * relativeRot;
+        Vector3 scaledLocalSize = Vector3.Scale(localSize, targetWorldScale);
+
+        Vector3 finalWorldCenter = colliderWorldPos + colliderWorldRot * localCenter;
+        Vector3 finalWorldSize = scaledLocalSize;
+
+        return new Bounds(finalWorldCenter, finalWorldSize);
     }
 
     float MaxComponent(Vector3 v)

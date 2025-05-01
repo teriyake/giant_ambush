@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -43,6 +44,30 @@ public class GameManager : NetworkBehaviour
     private NetworkedAutoLevelGenerator _levelGeneratorInstance;
     private Transform _vrPlayerSpawnPoint;
     private bool _levelGenerated = false;
+    private CreateRoom _activeRoomInstance = null;
+    private Vector3 m_lastArTapPosition = Vector3.zero;
+
+    [Header("VR Spawn Settings")]
+    [SerializeField]
+    private LayerMask vrSpawnObstructionLayers;
+
+    [SerializeField]
+    private float vrSpawnCheckRadius = 0.5f;
+
+    [SerializeField]
+    private float vrSpawnHeightOffset = 0.1f;
+
+    [SerializeField]
+    private int maxSpawnPlacementAttempts = 20;
+
+    [SerializeField]
+    private float minDistanceFromTap = 3.0f;
+
+    [SerializeField]
+    private float furnitureCheckHeight = 1.5f;
+
+    [SerializeField]
+    private float furnitureSpawnUnderOffset = 0.5f;
 
     void Awake()
     {
@@ -81,19 +106,19 @@ public class GameManager : NetworkBehaviour
         }
 
         if (PlatformRoleManager.Instance != null)
-            {
-                // Debug.Log(
-                //     $"PlayerMovement (Owner: {OwnerClientId}): Platform not ready yet. Subscribing to OnPlatformReady event."
-                // );
-                // PlatformRoleManager.Instance.OnPlatformReady += ConfigureARCameraCulling;
-            }
-            else
-            {
-                Debug.LogError(
-                    $"PlayerMovement (Owner: {OwnerClientId}): PlatformRoleManager Instance not found on spawn!",
-                    this
-                );
-            }
+        {
+            // Debug.Log(
+            //     $"PlayerMovement (Owner: {OwnerClientId}): Platform not ready yet. Subscribing to OnPlatformReady event."
+            // );
+            // PlatformRoleManager.Instance.OnPlatformReady += ConfigureARCameraCulling;
+        }
+        else
+        {
+            Debug.LogError(
+                $"PlayerMovement (Owner: {OwnerClientId}): PlatformRoleManager Instance not found on spawn!",
+                this
+            );
+        }
 
         Debug.Log($"GameManager spawned. IsServer: {IsServer}, IsClient: {IsClient}");
     }
@@ -120,15 +145,47 @@ public class GameManager : NetworkBehaviour
         base.OnNetworkDespawn();
     }
 
-    public void Server_NotifyLevelReady(GameObject levelRootObject)
+    public void Server_SetLastARTapPosition(Vector3 tapPosition)
+    {
+        if (!IsServer)
+            return;
+        m_lastArTapPosition = tapPosition;
+        Debug.Log($"GameManager [Server]: Stored last AR tap position: {m_lastArTapPosition}");
+    }
+
+    public void Server_NotifyLevelReady(
+        CreateRoom levelInstance,
+        List<CreateRoom.ScatterPointInfo> scatterInfo
+    )
     {
         if (!IsServer)
             return;
 
         Debug.Log($"GameManager [Server]: Received Level Ready notification from level generator.");
         _levelGenerated = true;
+        _activeRoomInstance = levelInstance;
 
-        Debug.LogWarning("GameManager [Server]: TODO: Calculate VR Spawn point CreateRoom.");
+        Vector3 safeSpawnPoint;
+        Quaternion spawnRotation = levelInstance.transform.rotation;
+
+        if (
+            CalculateSafeVRSpawnPoint(
+                levelInstance,
+                m_lastArTapPosition,
+                scatterInfo,
+                out safeSpawnPoint
+            )
+        )
+        {
+            Debug.Log($"GameManager [Server]: Calculated safe VR spawn point: {safeSpawnPoint}");
+            MoveVRPlayerToSpawn(safeSpawnPoint, spawnRotation);
+        }
+        else
+        {
+            Debug.LogError(
+                "GameManager [Server]: Failed to find a safe spawn point for the VR player after multiple attempts!"
+            );
+        }
 
         if (CurrentPhase.Value == GamePhase.Setup)
         {
@@ -144,6 +201,142 @@ public class GameManager : NetworkBehaviour
                 $"GameManager [Server]: Level Ready notification received but CurrentPhase is {CurrentPhase.Value}. Not starting countdown yet (will start when both players connect)."
             );
         }
+    }
+
+    private bool CalculateSafeVRSpawnPoint(
+        CreateRoom level,
+        Vector3 arTapPosition,
+        List<CreateRoom.ScatterPointInfo> scatterInfo,
+        out Vector3 spawnPoint
+    )
+    {
+        spawnPoint = Vector3.zero;
+        if (level == null)
+            return false;
+
+        Bounds levelBounds = level.GetWorldBounds();
+        List<Vector3> potentialFurnitureSpots = new List<Vector3>();
+
+        Debug.Log(
+            $"[SpawnCalc] Checking {scatterInfo?.Count ?? 0} scatter points for hiding spots."
+        );
+        if (scatterInfo != null)
+        {
+            foreach (var item in scatterInfo)
+            {
+                Debug.Log($"Checking furniture with bounds = {item.WorldBounds}...");
+                if (
+                    item.WorldBounds.size.y > 0.2f
+                    && item.WorldBounds.size.y < furnitureCheckHeight
+                    && item.WorldBounds.size.x > vrSpawnCheckRadius * 2f
+                    && item.WorldBounds.size.z > vrSpawnCheckRadius * 2f
+                )
+                {
+                    Vector3 pointUnder =
+                        item.WorldPosition - (Vector3.up * furnitureSpawnUnderOffset);
+                    pointUnder.y = levelBounds.min.y + vrSpawnHeightOffset;
+
+                    if (
+                        levelBounds.Contains(pointUnder)
+                        && !Physics.CheckSphere(
+                            pointUnder,
+                            vrSpawnCheckRadius,
+                            vrSpawnObstructionLayers
+                        )
+                    )
+                    {
+                        potentialFurnitureSpots.Add(pointUnder);
+                        Debug.Log(
+                            $"[SpawnCalc] Found potential safe spot under furniture at {pointUnder}"
+                        );
+                    }
+                    // else { Debug.Log($"[SpawnCalc] Spot under {item.PrefabIndex} at {pointUnder} failed check (InBounds: {levelBounds.Contains(pointUnder)}, SphereCheck: {!Physics.CheckSphere(pointUnder, vrSpawnCheckRadius, vrSpawnObstructionLayers)})"); }
+                }
+                // else { Debug.Log($"[SpawnCalc] Furniture {item.PrefabIndex} skipped (Size: {item.WorldBounds.size})"); }
+            }
+        }
+
+        if (potentialFurnitureSpots.Count > 0)
+        {
+            float maxDistSq = -1f;
+            Vector3 bestSpot = potentialFurnitureSpots[0];
+
+            foreach (var spot in potentialFurnitureSpots)
+            {
+                float distSq = (spot - arTapPosition).sqrMagnitude;
+                if (distSq > maxDistSq)
+                {
+                    maxDistSq = distSq;
+                    bestSpot = spot;
+                }
+            }
+            spawnPoint = bestSpot;
+            Debug.Log(
+                $"[SpawnCalc] Selected furniture spot furthest from tap: {spawnPoint} (DistSq: {maxDistSq})"
+            );
+            return true;
+        }
+
+        Debug.Log(
+            "[SpawnCalc] No suitable furniture spots found. Falling back to distance-biased random spawn."
+        );
+        List<Vector3> potentialRandomSpots = new List<Vector3>();
+        Vector3 checkBoundsMin = levelBounds.min + Vector3.one * vrSpawnCheckRadius;
+        Vector3 checkBoundsMax = levelBounds.max - Vector3.one * vrSpawnCheckRadius;
+
+        for (int i = 0; i < maxSpawnPlacementAttempts; i++)
+        {
+            float randomX = UnityEngine.Random.Range(checkBoundsMin.x, checkBoundsMax.x);
+            float randomZ = UnityEngine.Random.Range(checkBoundsMin.z, checkBoundsMax.z);
+            Vector3 potentialPoint = new Vector3(
+                randomX,
+                levelBounds.min.y + vrSpawnHeightOffset,
+                randomZ
+            );
+
+            if (
+                !Physics.CheckSphere(potentialPoint, vrSpawnCheckRadius, vrSpawnObstructionLayers)
+                && Vector3.Distance(potentialPoint, arTapPosition) >= minDistanceFromTap
+            )
+            {
+                potentialRandomSpots.Add(potentialPoint);
+                // Debug.Log($"[SpawnCalc] Found potential random spot attempt {i}: {potentialPoint}");
+            }
+        }
+
+        if (potentialRandomSpots.Count > 0)
+        {
+            float maxDistSq = -1f;
+            Vector3 bestSpot = potentialRandomSpots[0];
+
+            foreach (var spot in potentialRandomSpots)
+            {
+                float distSq = (spot - arTapPosition).sqrMagnitude;
+                if (distSq > maxDistSq)
+                {
+                    maxDistSq = distSq;
+                    bestSpot = spot;
+                }
+            }
+            spawnPoint = bestSpot;
+            Debug.Log(
+                $"[SpawnCalc] Selected random spot furthest from tap: {spawnPoint} (DistSq: {maxDistSq})"
+            );
+            return true;
+        }
+
+        Debug.LogWarning(
+            "[SpawnCalc] No safe spots found meeting criteria (furniture or distance). Using level center as last resort."
+        );
+        spawnPoint = levelBounds.center;
+        spawnPoint.y = levelBounds.min.y + vrSpawnHeightOffset;
+        if (Physics.CheckSphere(spawnPoint, vrSpawnCheckRadius, vrSpawnObstructionLayers))
+        {
+            Debug.LogError(
+                "[SpawnCalc] Couldn't fins a suitable spawn location."
+            );
+        }
+        return true;
     }
 
     public void RegisterLevelGenerator(NetworkedAutoLevelGenerator generator)
@@ -165,7 +358,7 @@ public class GameManager : NetworkBehaviour
             );
             _levelGenerated = true;
             CalculateAndSetVRSpawnPoint(generator);
-            MoveVRPlayerToSpawn();
+            // MoveVRPlayerToSpawn();
 
             if (CurrentPhase.Value == GamePhase.Setup || CurrentPhase.Value == GamePhase.LevelReady)
             {
@@ -307,40 +500,78 @@ public class GameManager : NetworkBehaviour
         );
     }
 
-    private void MoveVRPlayerToSpawn()
+    private void MoveVRPlayerToSpawn(Vector3 position, Quaternion rotation)
     {
-        if (!IsServer || _vrPlayerSpawnPoint == null)
+        if (!IsServer)
             return;
 
-        ulong vrClientId = GameManager.Instance.VRClientId.Value;
+        ulong vrClientId = VRClientId.Value;
 
-        if (
-            vrClientId != ulong.MaxValue
-            && NetworkManager.Singleton.ConnectedClients.TryGetValue(
-                vrClientId,
-                out NetworkClient vrClient
-            )
-            && vrClient.PlayerObject != null
-        )
+        if (vrClientId != ulong.MaxValue)
         {
-            GameObject VROriginGO = GameObject.FindGameObjectsWithTag("VROrigin")[0];
-            if (VROriginGO != null)
+            ClientRpcParams vrClientRpcParams = new ClientRpcParams
             {
-                Debug.Log(
-                    $"GameManager: Moving VR Player (Client {RoleManager.GetVRClientId()}, VR Origin: {VROriginGO.name}) to spawn point."
-                );
-                VROriginGO.transform.position = _vrPlayerSpawnPoint.position;
-                // VROriginGO.transform.rotation = _vrPlayerSpawnPoint.rotation;
+                Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { vrClientId } },
+            };
+            TeleportVRPlayerClientRpc(position, rotation, vrClientRpcParams);
+            Debug.Log(
+                $"GameManager [Server]: Sent TeleportVRPlayerClientRpc to Client {vrClientId} -> Pos: {position}"
+            );
+        }
+        else
+        {
+            Debug.LogError(
+                $"GameManager [Server]: VR Client ID is not set ({vrClientId}). Cannot teleport VR player!"
+            );
+        }
+    }
+
+    [ClientRpc]
+    private void TeleportVRPlayerClientRpc(
+        Vector3 targetPosition,
+        Quaternion targetRotation,
+        ClientRpcParams rpcParams = default
+    )
+    {
+        Debug.Log(
+            $"GameManager [Client {NetworkManager.Singleton.LocalClientId}]: Received TeleportVRPlayerClientRpc. Target: {targetPosition}"
+        );
+
+        if (!IsOwner && NetworkManager.Singleton.LocalClientId != VRClientId.Value)
+        {
+            Debug.LogWarning(
+                $"GameManager [Client {NetworkManager.Singleton.LocalClientId}]: Ignoring TeleportVRPlayerClientRpc as this is not the designated VR client ({VRClientId.Value})."
+            );
+            return;
+        }
+
+        GameObject vrOriginGO = null;
+        var vrOrigins = GameObject.FindGameObjectsWithTag("VROrigin");
+        if (vrOrigins.Length > 0)
+        {
+            vrOriginGO = vrOrigins[0];
+        }
+
+        if (vrOriginGO != null)
+        {
+            CharacterController cc = vrOriginGO.GetComponent<CharacterController>();
+            if (cc != null)
+            {
+                cc.enabled = false;
+                vrOriginGO.transform.position = targetPosition;
+                vrOriginGO.transform.rotation = targetRotation;
+                cc.enabled = true;
             }
             else
             {
-                Debug.LogError("GameManager: Could not find VR Origin!");
+                vrOriginGO.transform.position = targetPosition;
+                vrOriginGO.transform.rotation = targetRotation;
             }
         }
         else
         {
             Debug.LogError(
-                $"GameManager: Could not find VR player object (Client ID: {vrClientId}) or PlayerObject is null to move to spawn point!"
+                $"GameManager [Client {NetworkManager.Singleton.LocalClientId}]: Could not find GameObject with tag 'VROrigin' to teleport!"
             );
         }
     }

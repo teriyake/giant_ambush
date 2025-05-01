@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1789709343
+  GlobalObjectIdHash: 3745735771
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -68,13 +68,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   roundDuration: 180
   countdownDuration: 5
-  captureDistance: 2
   playerPrefab: {fileID: 1618725237159975800, guid: 2e45ce6ca086a4a9b8092936bf911d31,
     type: 3}
-  gameHUD: {fileID: 0}
   CurrentPhase:
     m_InternalValue: 0
   RoundTimer:
     m_InternalValue: 0
   WinnerClientId:
     m_InternalValue: 18446744073709551615
+  VRClientId:
+    m_InternalValue: 18446744073709551615
+  ARClientId:
+    m_InternalValue: 18446744073709551615
+  vrSpawnObstructionLayers:
+    serializedVersion: 2
+    m_Bits: 1073742833
+  vrSpawnCheckRadius: 1
+  vrSpawnHeightOffset: 0
+  maxSpawnPlacementAttempts: 20
+  minDistanceFromTap: 0.5
+  furnitureCheckHeight: 1.5
+  furnitureSpawnUnderOffset: 1
