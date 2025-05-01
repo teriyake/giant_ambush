@@ -107,7 +107,18 @@ public class AntLocomotion : MonoBehaviour
 
     void Update()
     {
+        Vector3 movementDelta = Vector3.zero;
+        if (isGrabbingLeft || isGrabbingRight)
+        {
+            movementDelta = CalculateMovement();
+        }
+        float intendedVerticalPullThisFrame = movementDelta.y * sensitivity;
+
         bool isGrounded = characterController.isGrounded;
+        if (intendedVerticalPullThisFrame > 0.01f)
+        {
+            verticalVelocity = Mathf.Max(verticalVelocity, gravityValue * Time.deltaTime); // make climbing vertically slightly easier
+        }
 
         if (isGrounded && verticalVelocity < 0)
         {
@@ -123,11 +134,6 @@ public class AntLocomotion : MonoBehaviour
             return;
         }
 
-        Vector3 movementDelta = Vector3.zero;
-        if (isGrabbingLeft || isGrabbingRight)
-        {
-            movementDelta = CalculateMovement();
-        }
         Vector3 combinedMoveVector = movementDelta * sensitivity;
         combinedMoveVector.y += verticalVelocity * Time.deltaTime;
 
@@ -140,6 +146,16 @@ public class AntLocomotion : MonoBehaviour
                 if (!isGrounded && characterController.isGrounded && verticalVelocity < 0)
                 {
                     verticalVelocity = groundingForce;
+                }
+
+                if ((lastCollisionFlags & CollisionFlags.Below) != 0 && verticalVelocity < 0)
+                {
+                    verticalVelocity = groundingForce;
+                }
+
+                if ((lastCollisionFlags & CollisionFlags.Above) != 0 && verticalVelocity > 0)
+                {
+                    verticalVelocity = 0f;
                 }
             }
             else
