@@ -5,6 +5,8 @@ using EzySlice;
 
 public class SliceThis : MonoBehaviour
 {
+    public Material mat;
+
     // Start is called before the first frame update
     int maxIter = 3;
     void Start()
@@ -15,8 +17,11 @@ public class SliceThis : MonoBehaviour
 
     void SliceGameObject(GameObject objToSlice, EzySlice.Plane slicingPlane, int call)
     {
-        SlicedHull slicedHull = SlicerExtensions.Slice(objToSlice, slicingPlane);
+        // Material objectMaterial = objToSlice.GetComponent<MeshRenderer>().material;
+        // TextureRegion crossSectionRegion = objectMaterial.GetTextureRegion(0, 0, objectMaterial.mainTexture.width, objectMaterial.mainTexture.height);
+        SlicedHull slicedHull = SlicerExtensions.Slice(objToSlice, slicingPlane, mat);
         call++;
+
 
         if (slicedHull != null && call < maxIter) {
             Debug.Log("Sliced Hull Created!");
