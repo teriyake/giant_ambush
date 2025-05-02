@@ -17,7 +17,33 @@ public class InteractionController : NetworkBehaviour
     [SerializeField]
     private Camera m_playerCamera;
 
+    [Header("AR Attack Settings")]
+    [SerializeField]
+    private float m_minSwipeDistancePixels = 50f;
+
+    [SerializeField]
+    private float minProjectileSpeed = 8f;
+
+    [SerializeField]
+    private float maxProjectileSpeed = 25f;
+
+    [SerializeField]
+    private float minExpectedSwipeSpeed = 200f;
+
+    [SerializeField]
+    private float maxExpectedSwipeSpeed = 10000f;
+
+    [SerializeField]
+    private float m_attackCooldown = 1.0f;
+
+    [SerializeField]
+    private float m_aimRaycastDistance = 10f;
+
     private bool m_canInteract = false;
+    private Vector2 m_swipeStartPosition;
+    private bool m_isSwiping = false;
+    private float m_swipeStartTime;
+    private float m_lastAttackTime = -10f;
 
     public override void OnNetworkSpawn()
     {
@@ -121,6 +147,7 @@ public class InteractionController : NetworkBehaviour
             || m_playerCamera == null
             || GameManager.Instance == null
             || PlatformRoleManager.Instance == null
+            || !IsOwner
         )
             return;
 
@@ -131,9 +158,63 @@ public class InteractionController : NetworkBehaviour
             return;
 
         Pointer currentPointer = Pointer.current;
-        if (currentPointer == null || !currentPointer.press.wasPressedThisFrame)
+        if (currentPointer == null)
             return;
 
+        if (currentPointer.press.wasPressedThisFrame)
+        {
+            m_swipeStartPosition = currentPointer.position.ReadValue();
+            m_swipeStartTime = Time.time;
+            m_isSwiping = true;
+            // TODO: show swipe start feedback?
+        }
+
+        if (currentPointer.press.wasReleasedThisFrame && m_isSwiping)
+        {
+            Vector2 swipeEndPosition = currentPointer.position.ReadValue();
+            float swipeEndTime = Time.time;
+            m_isSwiping = false;
+
+            Vector2 swipeVector = swipeEndPosition - m_swipeStartPosition;
+            float swipeDistance = swipeVector.magnitude;
+            float swipeDuration = swipeEndTime - m_swipeStartTime;
+            if (swipeDuration < 0.01f)
+                swipeDuration = 0.01f;
+
+            float swipeSpeedPixelsPerSec = swipeDistance / swipeDuration;
+
+            if (
+                swipeDistance >= m_minSwipeDistancePixels
+                && Time.time >= m_lastAttackTime + m_attackCooldown
+            )
+            {
+                m_lastAttackTime = Time.time;
+                float normalizedSwipeSpeed = Mathf.InverseLerp(
+                    minExpectedSwipeSpeed,
+                    maxExpectedSwipeSpeed,
+                    swipeSpeedPixelsPerSec
+                );
+                float calculatedProjectileSpeed = Mathf.Lerp(
+                    minProjectileSpeed,
+                    maxProjectileSpeed,
+                    normalizedSwipeSpeed
+                );
+
+                Debug.Log(
+                    $"Swipe: Dist={swipeDistance:F1}px, Dur={swipeDuration:F2}s, Speed={swipeSpeedPixelsPerSec:F1}px/s -> Projectile Speed: {calculatedProjectileSpeed:F1}m/s"
+                );
+
+                PerformSwipeAttack(
+                    m_swipeStartPosition,
+                    swipeEndPosition,
+                    calculatedProjectileSpeed
+                );
+                // TODO: handle tap if swipe distance is too small?
+            }
+        }
+
+        /*
+         * tap to capture logic
         Vector2 screenPosition = currentPointer.position.ReadValue();
 
         Ray ray = m_playerCamera.ScreenPointToRay(screenPosition);
@@ -180,6 +261,46 @@ public class InteractionController : NetworkBehaviour
         {
             Debug.Log("InteractionController (AR): Tap/click did not hit any interactable object.");
         }
+        */
+    }
+
+    private void PerformSwipeAttack(
+        Vector2 screenStartPos,
+        Vector2 screenEndPos,
+        float projectileSpeed
+    )
+    {
+        Ray aimRay = m_playerCamera.ScreenPointToRay(screenStartPos);
+        Vector3 targetPoint;
+
+        if (
+            Physics.Raycast(
+                aimRay,
+                out RaycastHit hit,
+                m_aimRaycastDistance
+                // ~LayerMask.GetMask("Everything")
+            )
+        )
+        {
+            targetPoint = hit.point;
+            Debug.DrawLine(aimRay.origin, targetPoint, Color.green, 2.0f);
+        }
+        else
+        {
+            targetPoint = aimRay.GetPoint(m_aimRaycastDistance);
+            Debug.DrawLine(aimRay.origin, targetPoint, Color.yellow, 2.0f);
+        }
+
+        Vector3 attackOrigin = aimRay.origin + aimRay.direction * 0.2f;
+
+        Vector3 attackDirection = (targetPoint - attackOrigin).normalized;
+
+        Debug.Log($"Swipe Attack: Origin={attackOrigin}, Direction={attackDirection}");
+        Debug.DrawRay(attackOrigin, attackDirection * 3f, Color.red, 2.0f);
+
+        GameManager.Instance.RequestAttackServerRpc(attackOrigin, attackDirection, projectileSpeed);
+
+        // TODO: handles VFX for AR
     }
 
     public override void OnDestroy()

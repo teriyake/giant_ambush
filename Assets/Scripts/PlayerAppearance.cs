@@ -65,6 +65,8 @@ public class PlayerAppearance : NetworkBehaviour
             Debug.Log(
                 $"Server setting appearance for NetworkObject {NetworkObjectId} (Owned by {OwnerClientId}). IsHostAppearance: {isHostOwned}"
             );
+
+            if (isHostOwned) gameObject.layer = LayerMask.NameToLayer("VRPlayer");
         }
 
         if (IsOwner)

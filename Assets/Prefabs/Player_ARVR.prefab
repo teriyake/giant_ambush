@@ -197,9 +197,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_interactableLayer:
     serializedVersion: 2
-    m_Bits: 1073742547
+    m_Bits: 1073743571
   m_maxInteractionDistance: 50
   m_playerCamera: {fileID: 0}
+  m_minSwipeDistancePixels: 50
+  minProjectileSpeed: 8
+  maxProjectileSpeed: 25
+  minExpectedSwipeSpeed: 200
+  maxExpectedSwipeSpeed: 10000
+  m_attackCooldown: 1
+  m_aimRaycastDistance: 10
 --- !u!114 &1631736293786552838
 MonoBehaviour:
   m_ObjectHideFlags: 0
