@@ -45,7 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3745735771
+  GlobalObjectIdHash: 402145233
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -89,3 +89,5 @@ MonoBehaviour:
   minDistanceFromTap: 0.5
   furnitureCheckHeight: 1.5
   furnitureSpawnUnderOffset: 1
+  attackProjectilePrefab: {fileID: 7892813974732314615, guid: 045b34d7908f5644286827cf09a427a6,
+    type: 3}

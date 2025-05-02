@@ -69,6 +69,10 @@ public class GameManager : NetworkBehaviour
     [SerializeField]
     private float furnitureSpawnUnderOffset = 0.5f;
 
+    [Header("Attack Settings")]
+    [SerializeField]
+    GameObject attackProjectilePrefab;
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -332,9 +336,7 @@ public class GameManager : NetworkBehaviour
         spawnPoint.y = levelBounds.min.y + vrSpawnHeightOffset;
         if (Physics.CheckSphere(spawnPoint, vrSpawnCheckRadius, vrSpawnObstructionLayers))
         {
-            Debug.LogError(
-                "[SpawnCalc] Couldn't fins a suitable spawn location."
-            );
+            Debug.LogError("[SpawnCalc] Couldn't fins a suitable spawn location.");
         }
         return true;
     }
@@ -878,6 +880,91 @@ public class GameManager : NetworkBehaviour
         //     PlayerFeedback targetFeedback = targetObject.GetComponent<PlayerFeedback>();
         //     targetFeedback?.PlayMissedEffect();
         // }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void RequestAttackServerRpc(
+        Vector3 origin,
+        Vector3 direction,
+        float projectileSpeed,
+        ServerRpcParams rpcParams = default
+    )
+    {
+        ulong requestingClientId = rpcParams.Receive.SenderClientId;
+
+        if (CurrentPhase.Value != GamePhase.Playing)
+        {
+            Debug.LogWarning(
+                $"Attack requested by {requestingClientId} but game phase is {CurrentPhase.Value}. Ignoring."
+            );
+            return;
+        }
+        if (requestingClientId != ARClientId.Value)
+        {
+            Debug.LogWarning(
+                $"Attack requested by {requestingClientId} but the AR Giant is {ARClientId.Value}. Ignoring."
+            );
+            return;
+        }
+        if (attackProjectilePrefab == null)
+        {
+            Debug.LogError("AttackProjectilePrefab is not assigned in GameManager!");
+            return;
+        }
+
+        Debug.Log(
+            $"Server received attack request from AR Client {requestingClientId}. Spawning projectile."
+        );
+
+        GameObject projectileGO = Instantiate(
+            attackProjectilePrefab,
+            origin,
+            Quaternion.LookRotation(direction)
+        );
+
+        NetworkObject projectileNO = projectileGO.GetComponent<NetworkObject>();
+        if (projectileNO != null)
+        {
+            projectileNO.Spawn(true);
+
+            NetworkedProjectile projectileScript = projectileGO.GetComponent<NetworkedProjectile>();
+            if (projectileScript != null)
+            {
+                projectileScript.Initialize(direction, projectileSpeed);
+            }
+            else
+            {
+                Debug.LogError("Spawned projectile is missing NetworkedProjectile script!");
+            }
+        }
+        else
+        {
+            Debug.LogError("AttackProjectilePrefab is missing NetworkObject component!");
+            Destroy(projectileGO);
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void ReportProjectileHitServerRpc(
+        ulong targetClientId,
+        ServerRpcParams rpcParams = default
+    )
+    {
+        Debug.Log($"Server received projectile hit report targeting Client ID: {targetClientId}");
+
+        if (CurrentPhase.Value == GamePhase.Playing && targetClientId == VRClientId.Value)
+        {
+            Debug.Log($"Confirmed hit on VR Player (Client {targetClientId}). Giant wins!");
+            EndGame(ARClientId.Value);
+
+            NotifyCaptureSuccessClientRpc(ARClientId.Value, VRClientId.Value);
+        }
+        else
+        {
+            Debug.LogWarning(
+                $"Projectile hit report for Client {targetClientId} ignored. Target is not VR player ({VRClientId.Value}) or game phase is not Playing ({CurrentPhase.Value})."
+            );
+        }
     }
 
     private void ConfigureARCameraCulling()
