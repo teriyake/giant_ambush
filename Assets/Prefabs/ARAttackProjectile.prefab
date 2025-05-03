@@ -95,6 +95,9 @@ VFXRenderer:
   m_ReflectionProbeUsage: 0
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_StaticBatchInfo:
@@ -201,7 +204,7 @@ MonoBehaviour:
   lifetime: 2
   hitLayerMask:
     serializedVersion: 2
-    m_Bits: 1073742839
+    m_Bits: 1024
 --- !u!114 &2390487662950951632
 MonoBehaviour:
   m_ObjectHideFlags: 0

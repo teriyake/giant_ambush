@@ -672,6 +672,18 @@ public class GameManager : NetworkBehaviour
             );
         }
 
+        NetworkObject captorObject = null;
+        if (
+            NetworkManager.Singleton.ConnectedClients.TryGetValue(
+                requestingClientId,
+                out NetworkClient captorClient
+            )
+            && captorClient.PlayerObject != null
+        )
+        {
+            captorObject = captorClient.PlayerObject;
+        }
+
         if (
             VRClientId.Value != ulong.MaxValue
             && NetworkManager.Singleton.ConnectedClients.TryGetValue(
@@ -689,7 +701,20 @@ public class GameManager : NetworkBehaviour
                     $"GameManager: Successful capture attempt by Giant (Client {requestingClientId}) on Ant (Object ID {targetNetworkObjectId}). Giant wins."
                 );
                 EndGame(ARClientId.Value);
-                NotifyCaptureSuccessClientRpc(requestingClientId, targetNetworkObjectId);
+                if (captorObject != null)
+                {
+                    NotifyCaptureSuccessClientRpc(
+                        requestingClientId,
+                        captorObject.NetworkObjectId,
+                        targetNetworkObjectId
+                    );
+                }
+                else
+                {
+                    Debug.LogError(
+                        $"GameManager: Could not find captor's NetworkObject for client {requestingClientId} to send CaptureSuccess RPC!"
+                    );
+                }
             }
             else
             {
@@ -764,33 +789,49 @@ public class GameManager : NetworkBehaviour
     [ClientRpc]
     private void NotifyCaptureSuccessClientRpc(
         ulong captorClientId,
+        ulong captorObjectId,
         ulong capturedObjectId,
         ClientRpcParams clientRpcParams = default
     )
     {
         Debug.Log(
-            $"Client {NetworkManager.Singleton.LocalClientId}: Received successful capture notification. Captor: {captorClientId}, Captured: {capturedObjectId}"
+            $"Client {NetworkManager.Singleton.LocalClientId}: Received successful capture notification. Captor Client: {captorClientId}, Captor Object: {captorObjectId}, Captured Object: {capturedObjectId}"
         );
 
         if (NetworkManager.Singleton == null || NetworkManager.Singleton.SpawnManager == null)
+        {
+            Debug.LogError(
+                $"[Client {NetworkManager.Singleton?.LocalClientId}] NotifyCaptureSuccessClientRpc: NetworkManager or SpawnManager is null!"
+            );
             return;
+        }
 
         if (
-            NetworkManager.Singleton.ConnectedClients.TryGetValue(
-                captorClientId,
-                out NetworkClient captorClient
+            NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(
+                captorObjectId,
+                out NetworkObject captorObject
             )
-            && captorClient.PlayerObject != null
         )
         {
-            PlayerFeedback captorFeedback =
-                captorClient.PlayerObject.GetComponent<PlayerFeedback>();
-            captorFeedback?.PlayCaptureSuccessEffect();
+            PlayerFeedback captorFeedback = captorObject.GetComponent<PlayerFeedback>();
+            if (captorFeedback != null)
+            {
+                captorFeedback.PlayCaptureSuccessEffect();
+                Debug.Log(
+                    $"[Client {NetworkManager.Singleton.LocalClientId}] Played capture success effect for Captor Object {captorObjectId}"
+                );
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[Client {NetworkManager.Singleton.LocalClientId}] Captor Object {captorObjectId} has no PlayerFeedback component."
+                );
+            }
         }
         else
         {
             Debug.LogWarning(
-                $"GameManager Client: Could not find PlayerObject for captor client {captorClientId} to play success feedback."
+                $"[Client {NetworkManager.Singleton.LocalClientId}] Could not find Captor NetworkObject with ID {captorObjectId} to play success feedback."
             );
         }
 
@@ -802,12 +843,24 @@ public class GameManager : NetworkBehaviour
         )
         {
             PlayerFeedback capturedFeedback = capturedObject.GetComponent<PlayerFeedback>();
-            capturedFeedback?.PlayCapturedEffect();
+            if (capturedFeedback != null)
+            {
+                capturedFeedback.PlayCapturedEffect();
+                Debug.Log(
+                    $"[Client {NetworkManager.Singleton.LocalClientId}] Played captured effect for Captured Object {capturedObjectId}"
+                );
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[Client {NetworkManager.Singleton.LocalClientId}] Captured Object {capturedObjectId} has no PlayerFeedback component."
+                );
+            }
         }
         else
         {
             Debug.LogWarning(
-                $"GameManager Client: Could not find NetworkObject with ID {capturedObjectId} to play captured feedback."
+                $"[Client {NetworkManager.Singleton.LocalClientId}] Could not find Captured NetworkObject with ID {capturedObjectId} to play captured feedback."
             );
         }
     }
@@ -950,19 +1003,58 @@ public class GameManager : NetworkBehaviour
         ServerRpcParams rpcParams = default
     )
     {
-        Debug.Log($"Server received projectile hit report targeting Client ID: {targetClientId}");
+        Debug.Log($"[Server] Received projectile hit report targeting Client ID: {targetClientId}");
 
         if (CurrentPhase.Value == GamePhase.Playing && targetClientId == VRClientId.Value)
         {
-            Debug.Log($"Confirmed hit on VR Player (Client {targetClientId}). Giant wins!");
-            EndGame(ARClientId.Value);
+            NetworkObject arPlayerObject = null;
+            if (
+                NetworkManager.Singleton.ConnectedClients.TryGetValue(
+                    ARClientId.Value,
+                    out NetworkClient arClient
+                )
+                && arClient.PlayerObject != null
+            )
+            {
+                arPlayerObject = arClient.PlayerObject;
+            }
 
-            NotifyCaptureSuccessClientRpc(ARClientId.Value, VRClientId.Value);
+            NetworkObject vrPlayerObject = null;
+            if (
+                NetworkManager.Singleton.ConnectedClients.TryGetValue(
+                    VRClientId.Value,
+                    out NetworkClient vrClient
+                )
+                && vrClient.PlayerObject != null
+            )
+            {
+                vrPlayerObject = vrClient.PlayerObject;
+            }
+
+            if (arPlayerObject != null && vrPlayerObject != null)
+            {
+                Debug.Log(
+                    $"[Server] Confirmed hit on VR Player (Object {vrPlayerObject.NetworkObjectId}, Client {targetClientId}). AR Player (Object {arPlayerObject.NetworkObjectId}, Client {ARClientId.Value}) wins!"
+                );
+                EndGame(ARClientId.Value);
+
+                NotifyCaptureSuccessClientRpc(
+                    ARClientId.Value,
+                    arPlayerObject.NetworkObjectId,
+                    vrPlayerObject.NetworkObjectId
+                );
+            }
+            else
+            {
+                Debug.LogError(
+                    $"[Server] Could not find NetworkObject for AR Player ({ARClientId.Value}) or VR Player ({VRClientId.Value}) to process projectile hit!"
+                );
+            }
         }
         else
         {
             Debug.LogWarning(
-                $"Projectile hit report for Client {targetClientId} ignored. Target is not VR player ({VRClientId.Value}) or game phase is not Playing ({CurrentPhase.Value})."
+                $"[Server] Projectile hit report for Client {targetClientId} ignored. Target is not VR player ({VRClientId.Value}) or game phase is not Playing ({CurrentPhase.Value})."
             );
         }
     }
