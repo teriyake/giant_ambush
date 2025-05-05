@@ -5,39 +5,52 @@ using EzySlice;
 
 public class SliceThis : MonoBehaviour
 {
-    public Material mat;
+    Material mat;
 
     // Start is called before the first frame update
     int maxIter = 3;
-    void Start()
+    public void BreakObj(GameObject obj)
     {
         Vector3 randomNormal = Random.onUnitSphere;
-        SliceGameObject(gameObject, new EzySlice.Plane(Vector3.zero, randomNormal), 0);
+        mat = gameObject.GetComponent<MeshRenderer>().material;
+        List<(GameObject, Vector3)> slices = SliceGameObject(obj, new EzySlice.Plane(Vector3.zero, randomNormal), 0);
+        foreach((GameObject, Vector3) tuple in slices){
+            GameObject o = tuple.Item1;
+            Vector3 normal = tuple.Item2;
+            Rigidbody rb = o.AddComponent<Rigidbody>();
+            rb.AddForce(normal * Random.Range(5f, 10f), ForceMode.Impulse);
+        }
     }
 
-    void SliceGameObject(GameObject objToSlice, EzySlice.Plane slicingPlane, int call)
+    List<(GameObject, Vector3)> SliceGameObject(GameObject objToSlice, EzySlice.Plane slicingPlane, int call)
     {
-        // Material objectMaterial = objToSlice.GetComponent<MeshRenderer>().material;
-        // TextureRegion crossSectionRegion = objectMaterial.GetTextureRegion(0, 0, objectMaterial.mainTexture.width, objectMaterial.mainTexture.height);
         SlicedHull slicedHull = SlicerExtensions.Slice(objToSlice, slicingPlane, mat);
         call++;
 
+        List<(GameObject, Vector3)> slicedObjects = new List<(GameObject, Vector3)>();
 
-        if (slicedHull != null && call < maxIter) {
-            Debug.Log("Sliced Hull Created!");
+        if (slicedHull != null) {
             GameObject upperHull = slicedHull.CreateUpperHull(objToSlice, null);
             GameObject lowerHull = slicedHull.CreateLowerHull(objToSlice, null);
             objToSlice.SetActive(false); // Hide the original object
             Destroy(objToSlice); // Destroy the original object
 
-            SliceGameObject(upperHull, new EzySlice.Plane(Vector3.zero, Random.onUnitSphere), call);
-            SliceGameObject(lowerHull, new EzySlice.Plane(Vector3.zero, Random.onUnitSphere), call);
+            if(call < maxIter) {
+                slicedObjects.AddRange(SliceGameObject(upperHull, new EzySlice.Plane(Vector3.zero, Random.onUnitSphere), call));
+                slicedObjects.AddRange(SliceGameObject(lowerHull, new EzySlice.Plane(Vector3.zero, Random.onUnitSphere), call));
+            } else {
+                slicedObjects.Add((upperHull, slicingPlane.GetNormal()));
+                slicedObjects.Add((lowerHull, -slicingPlane.GetNormal()));
+            }
+        } else {
+            slicedObjects.Add((objToSlice, slicingPlane.GetNormal())); 
         }
+        return slicedObjects;
     }
 
     // Update is called once per frame
-    void Update()
+    void Start()
     {
-        
+        BreakObj(gameObject);
     }
 }

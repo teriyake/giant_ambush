@@ -138,8 +138,6 @@ namespace EzySlice {
 				return null;
 			}
 
-            Debug.Log("EzySlice::Slice -> Slicing Mesh: " + sharedMesh.name);
-
 			Vector3[] verts = sharedMesh.vertices;
 			Vector2[] uv = sharedMesh.uv;
             Vector3[] norm = sharedMesh.normals;

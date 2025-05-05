@@ -31,6 +31,10 @@ namespace EzySlice {
 		private Transform trans_ref;
 		#endif
 
+		public Vector3 GetNormal() {
+			return m_normal;
+		}
+
 		public Plane(Vector3 pos, Vector3 norm) {
 			this.m_normal = norm;
 			this.m_dist = Vector3.Dot(norm, pos);
