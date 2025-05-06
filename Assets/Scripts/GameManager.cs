@@ -170,7 +170,7 @@ public class GameManager : NetworkBehaviour
         _activeRoomInstance = levelInstance;
 
         Vector3 safeSpawnPoint;
-        Quaternion spawnRotation = levelInstance.transform.rotation;
+        Quaternion spawnRotation = Quaternion.identity;
 
         if (
             CalculateSafeVRSpawnPoint(
@@ -281,57 +281,6 @@ public class GameManager : NetworkBehaviour
             return true;
         }
 
-        Debug.Log(
-            "[SpawnCalc] No suitable furniture spots found. Falling back to distance-biased random spawn."
-        );
-        List<Vector3> potentialRandomSpots = new List<Vector3>();
-        Vector3 checkBoundsMin = levelBounds.min + Vector3.one * vrSpawnCheckRadius;
-        Vector3 checkBoundsMax = levelBounds.max - Vector3.one * vrSpawnCheckRadius;
-
-        for (int i = 0; i < maxSpawnPlacementAttempts; i++)
-        {
-            float randomX = UnityEngine.Random.Range(checkBoundsMin.x, checkBoundsMax.x);
-            float randomZ = UnityEngine.Random.Range(checkBoundsMin.z, checkBoundsMax.z);
-            Vector3 potentialPoint = new Vector3(
-                randomX,
-                levelBounds.min.y + vrSpawnHeightOffset,
-                randomZ
-            );
-
-            if (
-                !Physics.CheckSphere(potentialPoint, vrSpawnCheckRadius, vrSpawnObstructionLayers)
-                && Vector3.Distance(potentialPoint, arTapPosition) >= minDistanceFromTap
-            )
-            {
-                potentialRandomSpots.Add(potentialPoint);
-                // Debug.Log($"[SpawnCalc] Found potential random spot attempt {i}: {potentialPoint}");
-            }
-        }
-
-        if (potentialRandomSpots.Count > 0)
-        {
-            float maxDistSq = -1f;
-            Vector3 bestSpot = potentialRandomSpots[0];
-
-            foreach (var spot in potentialRandomSpots)
-            {
-                float distSq = (spot - arTapPosition).sqrMagnitude;
-                if (distSq > maxDistSq)
-                {
-                    maxDistSq = distSq;
-                    bestSpot = spot;
-                }
-            }
-            spawnPoint = bestSpot;
-            Debug.Log(
-                $"[SpawnCalc] Selected random spot furthest from tap: {spawnPoint} (DistSq: {maxDistSq})"
-            );
-            return true;
-        }
-
-        Debug.LogWarning(
-            "[SpawnCalc] No safe spots found meeting criteria (furniture or distance). Using level center as last resort."
-        );
         spawnPoint = levelBounds.center;
         spawnPoint.y = levelBounds.min.y + vrSpawnHeightOffset;
         if (Physics.CheckSphere(spawnPoint, vrSpawnCheckRadius, vrSpawnObstructionLayers))

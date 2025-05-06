@@ -106,26 +106,47 @@ public class CreateRoom : NetworkBehaviour
 
     public Bounds GetWorldBounds()
     {
-        Bounds worldBounds;
-        Collider floorCollider = roomRoot.GetComponentInChildren<Collider>();
-        if (floorCollider != null)
+        Debug.LogError($"root prefab world pos: {roomRoot.transform.position}");
+        Debug.LogError($"root prefab local pos: {roomRoot.transform.localPosition}");
+        Debug.LogError($"root world pos: {transform.GetChild(0).position}");
+        Debug.LogError($"root local pos: {transform.GetChild(0).localPosition}");
+        Debug.LogError($"root rotation: {roomRoot.transform.eulerAngles}");
+
+        Bounds worldBounds = new Bounds();
+        bool firstWallFound = false;
+
+        foreach (Transform child in roomRoot.transform)
         {
-            return floorCollider.bounds;
+            if (child.name.ToLower().Contains("wall"))
+            {
+                Renderer wallRenderer = child.GetComponent<Renderer>();
+                if (wallRenderer != null)
+                {
+                    if (!firstWallFound)
+                    {
+                        worldBounds = wallRenderer.bounds;
+                        firstWallFound = true;
+                    }
+                    else
+                    {
+                        worldBounds.Encapsulate(wallRenderer.bounds);
+                    }
+                }
+            }
         }
-        else
+
+        if (!firstWallFound)
         {
-            Debug.LogWarning(
-                "CreateRoom: Could not find floor collider for bounds calculation. Estimating."
-            );
             Vector3 worldCenter =
-                transform.position
-                + transform.rotation * new Vector3(-roomSize.x / 2f, 0.1f, -roomSize.y / 2f);
+                roomRoot.transform.position
+                + roomRoot.transform.rotation
+                    * new Vector3(-roomSize.x / 2f, 0.1f, -roomSize.y / 2f);
             Vector3 worldSize = new Vector3(roomSize.x, 0.2f, roomSize.y);
             worldBounds = new Bounds(worldCenter, worldSize);
-
-            Debug.Log($"CreateRoom: World Bounds = {worldBounds}");
-            return worldBounds;
         }
+
+        Debug.Log($"CreateRoom: World Bounds = {worldBounds}");
+        return worldBounds;
     }
 
     [ClientRpc]
@@ -375,7 +396,11 @@ public class CreateRoom : NetworkBehaviour
         float maxZ = 0f;
         float yPos = 0.1f;
 
-        int numberOfScatterObjects = Mathf.FloorToInt(Mathf.CeilToInt(Mathf.Max(size.x, size.y)) * Mathf.CeilToInt(Mathf.Min(size.x, size.y)) / 2);
+        int numberOfScatterObjects = Mathf.FloorToInt(
+            Mathf.CeilToInt(Mathf.Max(size.x, size.y))
+                * Mathf.CeilToInt(Mathf.Min(size.x, size.y))
+                / 2
+        );
         Debug.Log($"Scattering {numberOfScatterObjects} objects...");
 
         int maxPlacementAttemptsPerObject = 20;
