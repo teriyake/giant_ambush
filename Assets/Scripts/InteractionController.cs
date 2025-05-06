@@ -270,33 +270,28 @@ public class InteractionController : NetworkBehaviour
         float projectileSpeed
     )
     {
-        Ray aimRay = m_playerCamera.ScreenPointToRay(screenStartPos);
-        Vector3 targetPoint;
+        float launchOffset = 0.3f;
+        Vector3 attackOrigin =
+            m_playerCamera.transform.position + m_playerCamera.transform.forward * launchOffset;
 
-        if (
-            Physics.Raycast(
-                aimRay,
-                out RaycastHit hit,
-                m_aimRaycastDistance
-                // ~LayerMask.GetMask("Everything")
-            )
-        )
+        Ray startRay = m_playerCamera.ScreenPointToRay(screenStartPos);
+        Ray endRay = m_playerCamera.ScreenPointToRay(screenEndPos);
+
+        Vector3 p1 = startRay.GetPoint(1.0f);
+        Vector3 p2 = endRay.GetPoint(1.0f);
+
+        Vector3 attackDirection = (p2 - p1).normalized;
+
+        if (attackDirection == Vector3.zero || (screenEndPos - screenStartPos).sqrMagnitude < 1.0f)
         {
-            targetPoint = hit.point;
-            Debug.DrawLine(aimRay.origin, targetPoint, Color.green, 2.0f);
-        }
-        else
-        {
-            targetPoint = aimRay.GetPoint(m_aimRaycastDistance);
-            Debug.DrawLine(aimRay.origin, targetPoint, Color.yellow, 2.0f);
+            attackDirection = m_playerCamera.transform.forward;
+            Debug.LogWarning("Swipe too short or resulted in zero direction.");
         }
 
-        Vector3 attackOrigin = aimRay.origin + aimRay.direction * 0.2f;
-
-        Vector3 attackDirection = (targetPoint - attackOrigin).normalized;
-
-        Debug.Log($"Swipe Attack: Origin={attackOrigin}, Direction={attackDirection}");
-        Debug.DrawRay(attackOrigin, attackDirection * 3f, Color.red, 2.0f);
+        Debug.Log(
+            $"Swipe Attack: Origin={attackOrigin}, Direction={attackDirection}, Speed={projectileSpeed}"
+        );
+        Debug.DrawRay(attackOrigin, attackDirection * 3f, Color.magenta, 2.0f);
 
         GameManager.Instance.RequestAttackServerRpc(attackOrigin, attackDirection, projectileSpeed);
 

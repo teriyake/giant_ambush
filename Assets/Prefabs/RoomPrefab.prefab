@@ -8958,6 +8958,26 @@ PrefabInstance:
       propertyPath: m_Name
       value: Shelf with Crates
       objectReference: {fileID: 0}
+    - target: {fileID: 8094012726818492132, guid: f355da60777d10946920a8b633e6b316,
+        type: 3}
+      propertyPath: m_Range
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8094012726818492132, guid: f355da60777d10946920a8b633e6b316,
+        type: 3}
+      propertyPath: m_Intensity
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8094012726818492132, guid: f355da60777d10946920a8b633e6b316,
+        type: 3}
+      propertyPath: m_ColorTemperature
+      value: 5011
+      objectReference: {fileID: 0}
+    - target: {fileID: 8094012726818492132, guid: f355da60777d10946920a8b633e6b316,
+        type: 3}
+      propertyPath: m_UseColorTemperature
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

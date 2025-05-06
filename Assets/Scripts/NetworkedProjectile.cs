@@ -14,7 +14,8 @@ public class NetworkedProjectile : NetworkBehaviour
     [SerializeField]
     private LayerMask hitLayerMask;
 
-    private static readonly int ImpactEventID = Shader.PropertyToID("Impact");
+    //private static readonly int ImpactEventID = Shader.PropertyToID("Impact");
+    private const string ImpactEventName = "Impact";
 
     private Rigidbody rb;
     private VisualEffect vfx;
@@ -22,6 +23,7 @@ public class NetworkedProjectile : NetworkBehaviour
     private float spawnTime;
     private float initialSpeed;
     private bool isDestroying = false;
+    private ulong ownerClientId;
 
     void Awake()
     {
@@ -29,20 +31,36 @@ public class NetworkedProjectile : NetworkBehaviour
         vfx = GetComponent<VisualEffect>();
         col = GetComponent<Collider>();
 
-        rb.isKinematic = true;
-        rb.useGravity = false;
-        col.isTrigger = true;
+        rb.isKinematic = false;
+        rb.useGravity = true;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        col.isTrigger = false;
     }
 
     public override void OnNetworkSpawn()
     {
         spawnTime = Time.time;
+        if (!IsServer)
+        {
+            rb.isKinematic = true;
+            col.enabled = false;
+        }
     }
 
-    public void Initialize(Vector3 direction, float initialSpeed)
+    public void Initialize(Vector3 position, Vector3 direction, float speed, ulong ownerId)
     {
-        transform.forward = direction.normalized;
-        this.initialSpeed = initialSpeed;
+        if (!IsServer)
+            return;
+
+        transform.position = position;
+        transform.rotation = Quaternion.LookRotation(direction);
+        this.initialSpeed = speed;
+        this.ownerClientId = ownerId;
+
+        rb.linearVelocity = direction.normalized * initialSpeed;
+        Debug.Log(
+            $"[Server] Projectile {NetworkObject.NetworkObjectId} initialized. Pos: {position}, Dir: {direction}, Speed: {speed}, Vel: {rb.linearVelocity}"
+        );
     }
 
     void Update()
@@ -50,99 +68,67 @@ public class NetworkedProjectile : NetworkBehaviour
         if (!IsServer)
             return;
 
-        float stepDistance = initialSpeed * Time.deltaTime;
-        Vector3 movement = transform.forward * stepDistance;
-        Vector3 nextPosition = transform.position + movement;
-
-        RaycastHit hit;
-        Vector3 rayOrigin = transform.position + transform.forward * 0.01f;
-
-        if (
-            Physics.Raycast(
-                rayOrigin,
-                transform.forward,
-                out hit,
-                stepDistance + 0.01f,
-                hitLayerMask
-            )
-        )
+        if (Time.time > spawnTime + lifetime && !isDestroying)
         {
-            HandleHit(hit);
-        }
-        else
-        {
-            transform.position = nextPosition;
-        }
-
-        if (Time.time > spawnTime + lifetime)
-        {
+            Debug.Log($"[Server] Projectile {NetworkObject.NetworkObjectId} lifetime expired.");
             DestroySelf();
         }
     }
 
-    void OnTriggerEnter(Collider other)
+    void OnCollisionEnter(Collision collision)
     {
-        if (isDestroying || !IsServer || ((1 << other.gameObject.layer) & hitLayerMask) == 0)
+        // DelayedOnCollision(2f);
+
+        if (isDestroying || !IsServer)
             return;
 
-        Debug.Log(
-            $"[Server] Projectile triggered: {other.name} on layer {LayerMask.LayerToName(other.gameObject.layer)}"
-        );
-
-        NetworkObject targetNetworkObject = other.GetComponentInParent<NetworkObject>();
-        if (
-            targetNetworkObject == null
-            || (
-                GameManager.Instance != null
-                && targetNetworkObject.OwnerClientId != GameManager.Instance.VRClientId.Value
-            )
-        )
+        if (((1 << collision.gameObject.layer) & hitLayerMask) == 0)
         {
-            Debug.Log($"[Server] Projectile hit non-VR object {other.name}. Destroying self.");
-            DestroySelf();
+            // DestroySelf();
+            return;
         }
+
+        Debug.Log(
+            $"[Server] Projectile {NetworkObject.NetworkObjectId} collided with: {collision.gameObject.name} on layer {LayerMask.LayerToName(collision.gameObject.layer)}"
+        );
+        HandleCollision(collision);
     }
 
-    private void HandleHit(RaycastHit hit)
+    private System.Collections.IEnumerator DelayedOnCollision(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+    }
+
+    private void HandleCollision(Collision collision)
     {
         if (isDestroying || !IsServer)
             return;
 
         Debug.Log(
-            $"[Server] Projectile raycast hit: {hit.collider.name} on layer {LayerMask.LayerToName(hit.collider.gameObject.layer)}"
+            $"[Server] Projectile {NetworkObject.NetworkObjectId} handling collision with: {collision.collider.name} on layer {LayerMask.LayerToName(collision.collider.gameObject.layer)}"
         );
 
-        NetworkObject targetNetworkObject = hit.collider.GetComponentInParent<NetworkObject>();
-        bool hitVRPlayer = false;
-        if (
-            targetNetworkObject != null
-            && GameManager.Instance != null
-            && targetNetworkObject.OwnerClientId == GameManager.Instance.VRClientId.Value
-        )
-        {
-            hitVRPlayer = true;
-            Debug.Log(
-                $"[Server] Projectile raycast hit VR Player (Client {targetNetworkObject.OwnerClientId})!"
-            );
-        }
-        else if (targetNetworkObject != null)
-        {
-            Debug.Log(
-                $"[Server] Projectile raycast hit NetworkObject {targetNetworkObject.name} owned by {targetNetworkObject.OwnerClientId}, but it's not the VR player ({GameManager.Instance?.VRClientId.Value})."
-            );
-        }
-        else
-        {
-            Debug.Log(
-                $"[Server] Projectile raycast hit {hit.collider.name}, but it has no NetworkObject."
-            );
-        }
+        NetworkObject targetNetworkObject =
+            collision.collider.GetComponentInParent<NetworkObject>();
+
+        int vrPlayerLayer = LayerMask.NameToLayer("VRPlayer");
+        bool hitVRPlayer = (collision.gameObject.layer == vrPlayerLayer);
 
         if (hitVRPlayer)
         {
-            GameManager.Instance.ReportProjectileHitServerRpc(targetNetworkObject.OwnerClientId);
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.ReportProjectileHitServerRpc(
+                    targetNetworkObject.OwnerClientId
+                );
+            }
+            else
+            {
+                Debug.LogError(
+                    "[Server] GameManager.Instance is null, cannot report projectile hit."
+                );
+            }
         }
-
         DestroySelf();
     }
 
@@ -176,7 +162,7 @@ public class NetworkedProjectile : NetworkBehaviour
             Debug.Log(
                 $"[{NetworkManager.Singleton?.LocalClientId ?? 0}] Triggering Impact VFX for {gameObject.name}"
             );
-            vfx.SendEvent(ImpactEventID);
+            vfx.SendEvent(ImpactEventName);
         }
         else
         {

@@ -932,7 +932,7 @@ public class GameManager : NetworkBehaviour
             NetworkedProjectile projectileScript = projectileGO.GetComponent<NetworkedProjectile>();
             if (projectileScript != null)
             {
-                projectileScript.Initialize(direction, projectileSpeed);
+                projectileScript.Initialize(origin, direction, projectileSpeed, requestingClientId);
             }
             else
             {
