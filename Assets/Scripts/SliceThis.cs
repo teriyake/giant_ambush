@@ -25,7 +25,7 @@ public class SliceThis : NetworkBehaviour
     {
         if (!IsServer)
             return;
-
+        Debug.LogError("SliceThis: ServerRpc entered.");
         if (slicedPiecePrefab == null)
         {
             Debug.LogError(
@@ -91,6 +91,8 @@ public class SliceThis : NetworkBehaviour
                 this
             );
         }
+
+        Debug.LogError("SliceThis: ServerRpc returned.");
     }
 
     private void SetupSlicedPiece(
