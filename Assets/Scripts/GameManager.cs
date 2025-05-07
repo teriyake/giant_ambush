@@ -92,6 +92,18 @@ public class GameManager : NetworkBehaviour
     [SerializeField]
     private float objectPushConeAngle = 45f;
 
+    [Header("World Wind VFX (for VR Player)")]
+    [SerializeField]
+    private GameObject worldWindVFXPrefab;
+
+    [Tooltip("How long the world wind VFX object stays alive before being despawned.")]
+    [SerializeField]
+    private float worldWindVFXLifetime = 2.5f;
+
+    private static readonly int WorldWindSpeedID = Shader.PropertyToID("WindSpeed");
+    private static readonly int WorldParticleCountID = Shader.PropertyToID("ParticleCount");
+    private static readonly string PlayWorldWindEventName = "OnBlowWind";
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -1097,6 +1109,47 @@ public class GameManager : NetworkBehaviour
             $"[Server] Handling wind. Origin: {origin}, Dir: {direction}, Strength: {strength}"
         );
 
+        if (worldWindVFXPrefab != null)
+        {
+            GameObject vfxInstance = Instantiate(
+                worldWindVFXPrefab,
+                origin,
+                Quaternion.LookRotation(direction)
+            );
+            NetworkObject vfxNetObj = vfxInstance.GetComponent<NetworkObject>();
+            if (vfxNetObj != null)
+            {
+                vfxNetObj.Spawn(true);
+
+                VisualEffect worldVFX = vfxInstance.GetComponent<VisualEffect>();
+                if (worldVFX != null)
+                {
+                    float vfxSpeed = 5f + (strength * 0.5f);
+                    int vfxCount = 100 + (int)(strength * 10f);
+
+                    worldVFX.SetFloat(WorldWindSpeedID, vfxSpeed);
+                    worldVFX.SetInt(WorldParticleCountID, vfxCount);
+                    TriggerWorldWindVFXClientRpc(vfxNetObj.NetworkObjectId, vfxSpeed, vfxCount);
+                }
+                else
+                {
+                    Debug.LogError(
+                        "[Server] Spawned worldWindVFXPrefab is missing VisualEffect component!"
+                    );
+                }
+
+                StartCoroutine(DespawnNetworkedObject(vfxInstance, worldWindVFXLifetime));
+            }
+            else
+            {
+                Debug.LogError(
+                    "[Server] worldWindVFXPrefab is missing NetworkObject component! Cannot spawn.",
+                    worldWindVFXPrefab
+                );
+                Destroy(vfxInstance);
+            }
+        }
+
         Vector3 checkCenter = origin + direction * (windMaxDistance * 0.5f);
         Collider[] hitColliders = Physics.OverlapSphere(
             checkCenter,
@@ -1130,18 +1183,46 @@ public class GameManager : NetworkBehaviour
             }
             else
             {
-                Debug.LogError($"[Server] Cannot apply wind force to {hitCollider.name}. Make sure it has a Rigidbody and is not kinematic!");
+                Debug.LogError(
+                    $"[Server] Cannot apply wind force to {hitCollider.name}. Make sure it has a Rigidbody and is not kinematic!"
+                );
             }
 
             SliceThis slicer = hitCollider.GetComponentInParent<SliceThis>();
             if (slicer != null && effectiveStrength >= minStrengthToSlice)
             {
                 Vector3 slicePosition = hitCollider.bounds.center;
-                Vector3 sliceNormal = (direction + UnityEngine.Random.insideUnitSphere * 0.2f).normalized;
+                Vector3 sliceNormal = (
+                    direction + UnityEngine.Random.insideUnitSphere * 0.2f
+                ).normalized;
 
                 slicer.SliceObjectServerRpc(sliceNormal, slicePosition, effectiveStrength);
 
                 Debug.Log($"[Server] Requested slice for {hitCollider.name}");
+            }
+        }
+    }
+
+    [ClientRpc]
+    private void TriggerWorldWindVFXClientRpc(ulong vfxNetworkId, float speed, int count)
+    {
+        if (
+            NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(
+                vfxNetworkId,
+                out NetworkObject netObj
+            )
+        )
+        {
+            VisualEffect vfx = netObj.GetComponent<VisualEffect>();
+            if (vfx != null)
+            {
+                vfx.SetFloat(WorldWindSpeedID, speed);
+                vfx.SetInt(WorldParticleCountID, count);
+                vfx.SendEvent(PlayWorldWindEventName);
+
+                Debug.Log(
+                    $"Client {NetworkManager.Singleton.LocalClientId} triggered world wind VFX ({vfxNetworkId})"
+                );
             }
         }
     }
