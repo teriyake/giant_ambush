@@ -52,8 +52,8 @@ public class ARWindController : NetworkBehaviour
     [SerializeField]
     private int vfxParticleCountVolumeMultiplier = 150;
 
-    private static readonly int WindSpeedID = Shader.PropertyToID("WindSpeed");
-    private static readonly int ParticleCountID = Shader.PropertyToID("ParticleCount");
+    private static readonly string WindSpeedName = "WindSpeed";
+    private static readonly string ParticleCountName = "ParticleCount";
     private static readonly string PlayWindEventName = "OnBlowWind";
     private VisualEffect activeWindVFX;
 
@@ -215,8 +215,8 @@ public class ARWindController : NetworkBehaviour
                     vfxBaseParticleCount + (vfxParticleCountVolumeMultiplier * vfxVolumeNormalized)
                 );
 
-                activeWindVFX.SetFloat(WindSpeedID, currentVFXSpeed);
-                activeWindVFX.SetFloat(ParticleCountID, (float)currentVFXCount);
+                activeWindVFX.SetFloat(WindSpeedName, currentVFXSpeed);
+                activeWindVFX.SetFloat(ParticleCountName, (float)currentVFXCount);
 
                 activeWindVFX.SendEvent(PlayWindEventName);
             }
