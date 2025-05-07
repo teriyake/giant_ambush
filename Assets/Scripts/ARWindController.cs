@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.VFX;
 
 [RequireComponent(typeof(NetworkObject))]
 public class ARWindController : NetworkBehaviour
@@ -20,6 +21,8 @@ public class ARWindController : NetworkBehaviour
     [Tooltip("Volume level that maps to maximum wind strength.")]
     [SerializeField]
     private float maxVolumeMap = 0.5f;
+    [SerializeField]
+    private float maxVolumeMapVFX = 0.5f;
 
     [Tooltip("Overall multiplier for wind strength.")]
     [SerializeField]
@@ -33,6 +36,26 @@ public class ARWindController : NetworkBehaviour
     [Tooltip("Offset from camera to spawn wind origin.")]
     [SerializeField]
     private float windOriginOffset = 0.5f;
+
+    [SerializeField]
+    public GameObject windVFXPrefab;
+
+    [SerializeField]
+    private float vfxBaseSpeed = 5f;
+
+    [SerializeField]
+    private float vfxSpeedVolumeMultiplier = 10f;
+
+    [SerializeField]
+    private int vfxBaseParticleCount = 50;
+
+    [SerializeField]
+    private int vfxParticleCountVolumeMultiplier = 150;
+
+    private static readonly int WindSpeedID = Shader.PropertyToID("WindSpeed");
+    private static readonly int ParticleCountID = Shader.PropertyToID("ParticleCount");
+    private static readonly string PlayWindEventName = "OnBlowWind";
+    private VisualEffect activeWindVFX;
 
     private AudioClip micClip;
     private string microphoneName;
@@ -105,6 +128,26 @@ public class ARWindController : NetworkBehaviour
 
         samples = new float[sampleWindow];
         InitializeMicrophone();
+
+        if (windVFXPrefab != null)
+        {
+            GameObject vfxInstance = Instantiate(windVFXPrefab, arCamera.transform);
+            vfxInstance.transform.localPosition = Vector3.forward * windOriginOffset;
+            vfxInstance.transform.localRotation = Quaternion.identity;
+            activeWindVFX = vfxInstance.GetComponent<VisualEffect>();
+            if (activeWindVFX == null)
+            {
+                Debug.LogError(
+                    "ARWindController: Instantiated windVFXPrefab is missing VisualEffect component!",
+                    this
+                );
+            }
+        }
+        else
+        {
+            Debug.LogWarning("ARWindController: WindVFXPrefab not assigned.", this);
+        }
+
         Debug.Log("ARWindController initialized for AR player.", this);
     }
 
@@ -156,6 +199,28 @@ public class ARWindController : NetworkBehaviour
             Vector3 windDirection = arCamera.transform.forward;
 
             //Debug.Log($"ARWindController: Blowing wind! Volume: {volume:F3}, Strength: {strength:F2}", this);
+
+            if (activeWindVFX != null)
+            {
+                float vfxVolumeNormalized = Mathf.InverseLerp(
+                    volumeThreshold,
+                    maxVolumeMapVFX,
+                    volume
+                );
+                vfxVolumeNormalized = Mathf.Clamp01(vfxVolumeNormalized);
+
+                float currentVFXSpeed =
+                    vfxBaseSpeed + (vfxSpeedVolumeMultiplier * vfxVolumeNormalized);
+                int currentVFXCount = (int)(
+                    vfxBaseParticleCount + (vfxParticleCountVolumeMultiplier * vfxVolumeNormalized)
+                );
+
+                activeWindVFX.SetFloat(WindSpeedID, currentVFXSpeed);
+                activeWindVFX.SetFloat(ParticleCountID, (float)currentVFXCount);
+
+                activeWindVFX.SendEvent(PlayWindEventName);
+            }
+
             BlowWindServerRpc(windOrigin, windDirection, strength);
         }
     }
@@ -201,6 +266,11 @@ public class ARWindController : NetworkBehaviour
             {
                 Microphone.End(microphoneName);
                 Debug.Log($"ARWindController: Stopped microphone '{microphoneName}'.", this);
+            }
+
+            if (activeWindVFX != null)
+            {
+                Destroy(activeWindVFX.gameObject);
             }
         }
         base.OnDestroy();

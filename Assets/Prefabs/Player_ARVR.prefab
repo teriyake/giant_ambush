@@ -125,7 +125,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2635813401
+  GlobalObjectIdHash: 4157037343
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -265,9 +265,16 @@ MonoBehaviour:
   sampleWindow: 128
   volumeThreshold: 0.05
   maxVolumeMap: 0.5
+  maxVolumeMapVFX: 0.5
   windStrengthMultiplier: 15
   windCooldown: 0.3
   windOriginOffset: 0.5
+  windVFXPrefab: {fileID: 1652673863916356463, guid: 17dbf5aba6c82b742b79db0a7b437552,
+    type: 3}
+  vfxBaseSpeed: 5
+  vfxSpeedVolumeMultiplier: 10
+  vfxBaseParticleCount: 50
+  vfxParticleCountVolumeMultiplier: 150
 --- !u!1001 &220495734188125470
 PrefabInstance:
   m_ObjectHideFlags: 0
