@@ -34,7 +34,7 @@ public class SliceThis : NetworkBehaviour
             );
             return;
         }
-        BreakObj(this.gameObject);
+        BreakObj(this.gameObject, sliceStrength * 0.4f);
 
         Debug.LogError("SliceThis: ServerRpc returned.");
     }
@@ -112,7 +112,7 @@ public class SliceThis : NetworkBehaviour
     private int maxIter = 3;
     private Material[] mats;
 
-    public void BreakObj(GameObject obj)
+    public void BreakObj(GameObject obj, float sliceStrength)
     {
         Vector3 randomNormal = Random.onUnitSphere;
         mats = gameObject.GetComponent<MeshRenderer>().materials;
@@ -135,7 +135,7 @@ public class SliceThis : NetworkBehaviour
                 return;
             }
 
-            SetupSlicedPiece(o, mats, o.transform.position, o.transform.rotation, normal, 0.1f);
+            SetupSlicedPiece(o, mats, o.transform.position, o.transform.rotation, normal, sliceStrength);
             Destroy(o);
         }
     }
