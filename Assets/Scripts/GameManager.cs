@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.VFX;
 
 public enum GamePhase
 {
@@ -1223,6 +1224,23 @@ public class GameManager : NetworkBehaviour
                 Debug.Log(
                     $"Client {NetworkManager.Singleton.LocalClientId} triggered world wind VFX ({vfxNetworkId})"
                 );
+            }
+        }
+    }
+
+    private IEnumerator DespawnNetworkedObject(GameObject objToDespawn, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (objToDespawn != null)
+        {
+            NetworkObject netObj = objToDespawn.GetComponent<NetworkObject>();
+            if (netObj != null && netObj.IsSpawned)
+            {
+                netObj.Despawn(true);
+            }
+            else if (objToDespawn != null)
+            {
+                Destroy(objToDespawn);
             }
         }
     }
