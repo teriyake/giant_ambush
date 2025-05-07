@@ -99,7 +99,44 @@ public class CreateRoom : NetworkBehaviour
             scatteredObjectsDataList
         );
 
-        InstantiateScatteredObjectsClientRpc(scatteredObjectsDataList.ToArray());
+        List<ScatteredObjectData> nonNetworkedObjectsToSpawn = new List<ScatteredObjectData>();
+
+        foreach (var objData in scatteredObjectsDataList)
+        {
+            if (objData.prefabIndex < 0 || objData.prefabIndex >= scatterPrefabs.Length)
+            {
+                Debug.LogError($"Invalid prefab index {objData.prefabIndex} during server-side processing in GenerateRoomForAllClients.");
+                continue;
+            }
+            GameObject prefabToScatter = scatterPrefabs[objData.prefabIndex];
+            NetworkObject prefabNetObj = prefabToScatter.GetComponent<NetworkObject>();
+
+            if (prefabNetObj != null)
+            {
+                GameObject scatteredObj = Instantiate(prefabToScatter, roomRoot.transform);
+                scatteredObj.transform.localPosition = objData.localPosition;
+                scatteredObj.transform.localRotation = objData.localRotation;
+                NetworkObject instanceNetObj = scatteredObj.GetComponent<NetworkObject>();
+                if (instanceNetObj != null)
+                {
+                    instanceNetObj.Spawn(true);
+                }
+                else
+                {
+                    Debug.LogError($"Prefab {prefabToScatter.name} had NetworkObject, but instance did not. Treating as non-networked.", scatteredObj);
+                    nonNetworkedObjectsToSpawn.Add(objData);
+                }
+            }
+            else
+            {
+                nonNetworkedObjectsToSpawn.Add(objData);
+            }
+        }
+
+        if (nonNetworkedObjectsToSpawn.Count > 0)
+        {
+            InstantiateNonNetworkedScatteredObjectsClientRpc(nonNetworkedObjectsToSpawn.ToArray());
+        }
 
         GameManager.Instance?.Server_NotifyLevelReady(this, worldScatterInfo);
     }
@@ -727,36 +764,38 @@ public class CreateRoom : NetworkBehaviour
     }
 
     [ClientRpc]
-    void InstantiateScatteredObjectsClientRpc(ScatteredObjectData[] scatteredObjectsData)
+    void InstantiateNonNetworkedScatteredObjectsClientRpc(ScatteredObjectData[] nonNetworkedObjectsData)
     {
         if (roomRoot == null)
         {
             Debug.LogError(
-                "Room root is not assigned when trying to instantiate scattered objects."
+                "Room root is not assigned when trying to instantiate non-networked scattered objects."
             );
             return;
         }
 
         if (scatterPrefabs == null || scatterPrefabs.Length == 0)
         {
-            Debug.LogError("Scatter prefabs list is empty or not assigned on client.");
+            Debug.LogError("Scatter prefabs list is empty or not assigned on client for non-networked objects.");
             return;
         }
 
-        foreach (var objData in scatteredObjectsData)
+        foreach (var objData in nonNetworkedObjectsData)
         {
             if (objData.prefabIndex < 0 || objData.prefabIndex >= scatterPrefabs.Length)
             {
-                Debug.LogError($"Invalid prefab index {objData.prefabIndex} received.");
+                Debug.LogError($"Invalid prefab index {objData.prefabIndex} received for non-networked object.");
                 continue;
             }
 
             GameObject prefabToScatter = scatterPrefabs[objData.prefabIndex];
+            // This RPC is only for objects confirmed by the server to NOT have a NetworkObject.
+            // Thus, we instantiate them directly on the client.
             GameObject scatteredObj = Instantiate(prefabToScatter, roomRoot.transform);
             scatteredObj.transform.localPosition = objData.localPosition;
             scatteredObj.transform.localRotation = objData.localRotation;
         }
-        Debug.Log($"Instantiated {scatteredObjectsData.Length} scattered objects on client.");
+        Debug.Log($"Instantiated {nonNetworkedObjectsData.Length} non-networked scattered objects on client.");
     }
 
     Vector2 CalculateRoomSize()
