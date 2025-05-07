@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 3795042162861877253}
   - component: {fileID: 5039313285807351320}
   - component: {fileID: 1146663272022385678}
+  - component: {fileID: 5767433072707568579}
+  - component: {fileID: 4607631778832396703}
   m_Layer: 0
   m_Name: Object061
   m_TagString: Untagged
@@ -60,9 +62,6 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -109,6 +108,42 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.6833353, y: 0.41992176, z: 0.77009547}
   m_Center: {x: -0.05616571, y: 1.7433228, z: -0.59341085}
+--- !u!114 &5767433072707568579
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1665783389608545120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 815831786
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!114 &4607631778832396703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1665783389608545120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45f2ebdd8742a7d44bb0e2341fedafb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  crossSectionMaterial: {fileID: 0}
+  slicedPiecePrefab: {fileID: 7819331231158821684, guid: 1cf5c81a847e8bf47bac90d3d7f9322b,
+    type: 3}
 --- !u!1 &1748880360397761923
 GameObject:
   m_ObjectHideFlags: 0
@@ -122,6 +157,8 @@ GameObject:
   - component: {fileID: 1184064820839947165}
   - component: {fileID: 1458237907528203265}
   - component: {fileID: 3702880767353829849}
+  - component: {fileID: 5695236358622033933}
+  - component: {fileID: 8609534936603558325}
   m_Layer: 0
   m_Name: Crates Shelf
   m_TagString: Untagged
@@ -175,9 +212,6 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -246,6 +280,42 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 8626059365974160315, guid: 66f91e45b3db4984494c4394f379f7a7, type: 3}
+--- !u!114 &5695236358622033933
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1748880360397761923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 587673900
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!114 &8609534936603558325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1748880360397761923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45f2ebdd8742a7d44bb0e2341fedafb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  crossSectionMaterial: {fileID: 0}
+  slicedPiecePrefab: {fileID: 7819331231158821684, guid: 1cf5c81a847e8bf47bac90d3d7f9322b,
+    type: 3}
 --- !u!1 &1859615309633952356
 GameObject:
   m_ObjectHideFlags: 0
@@ -287,8 +357,9 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1859615309633952356}
   m_Enabled: 1
-  serializedVersion: 11
+  serializedVersion: 10
   m_Type: 2
+  m_Shape: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 1
   m_Range: 0.2
@@ -338,12 +409,8 @@ Light:
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
-  m_ForceVisible: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
-  m_LightUnit: 1
-  m_LuxAtDistance: 1
-  m_EnableSpotReflector: 1
 --- !u!114 &1487832230983374711
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -379,6 +446,8 @@ GameObject:
   - component: {fileID: 794743786136453176}
   - component: {fileID: 4631854283694185330}
   - component: {fileID: 6469372484625389564}
+  - component: {fileID: 8356442532970982885}
+  - component: {fileID: 5041458509125729076}
   m_Layer: 0
   m_Name: Object066
   m_TagString: Untagged
@@ -426,9 +495,6 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -475,6 +541,42 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.62882173, y: 0.41992152, z: 0.72323644}
   m_Center: {x: -0.056165725, y: 1.1053329, z: 0.71165067}
+--- !u!114 &8356442532970982885
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2303120982033688281}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 0
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!114 &5041458509125729076
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2303120982033688281}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45f2ebdd8742a7d44bb0e2341fedafb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  crossSectionMaterial: {fileID: 0}
+  slicedPiecePrefab: {fileID: 7819331231158821684, guid: 1cf5c81a847e8bf47bac90d3d7f9322b,
+    type: 3}
 --- !u!1 &3315489266759930359
 GameObject:
   m_ObjectHideFlags: 0
@@ -519,6 +621,8 @@ GameObject:
   - component: {fileID: 1815044010867820510}
   - component: {fileID: 6609279197601888266}
   - component: {fileID: 3590063177296339011}
+  - component: {fileID: 4575928125580092308}
+  - component: {fileID: 5172517312792948724}
   m_Layer: 0
   m_Name: Object064
   m_TagString: Untagged
@@ -566,9 +670,6 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -615,6 +716,42 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.647522, y: 0.41992152, z: 0.7394351}
   m_Center: {x: -0.056165725, y: 0.46733278, z: -0.59341085}
+--- !u!114 &4575928125580092308
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3323860960884657983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 1344555027
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!114 &5172517312792948724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3323860960884657983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45f2ebdd8742a7d44bb0e2341fedafb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  crossSectionMaterial: {fileID: 0}
+  slicedPiecePrefab: {fileID: 7819331231158821684, guid: 1cf5c81a847e8bf47bac90d3d7f9322b,
+    type: 3}
 --- !u!1 &5647754257586877162
 GameObject:
   m_ObjectHideFlags: 0
@@ -627,6 +764,8 @@ GameObject:
   - component: {fileID: 6888372045271124894}
   - component: {fileID: 6856278385821888706}
   - component: {fileID: 4227419009517900313}
+  - component: {fileID: 8682361408243524473}
+  - component: {fileID: 6859766822272822057}
   m_Layer: 0
   m_Name: Object065
   m_TagString: Untagged
@@ -674,9 +813,6 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -723,6 +859,42 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.67759824, y: 0.41992152, z: 0.7652182}
   m_Center: {x: -0.05616571, y: 0.46733278, z: 0.7116507}
+--- !u!114 &8682361408243524473
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5647754257586877162}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2115663025
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!114 &6859766822272822057
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5647754257586877162}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45f2ebdd8742a7d44bb0e2341fedafb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  crossSectionMaterial: {fileID: 0}
+  slicedPiecePrefab: {fileID: 7819331231158821684, guid: 1cf5c81a847e8bf47bac90d3d7f9322b,
+    type: 3}
 --- !u!1 &7428096482494699532
 GameObject:
   m_ObjectHideFlags: 0
@@ -735,6 +907,8 @@ GameObject:
   - component: {fileID: 8994892069714711959}
   - component: {fileID: 1037895263864156806}
   - component: {fileID: 6119124428877446237}
+  - component: {fileID: 4074066948638118167}
+  - component: {fileID: 3237806962427795661}
   m_Layer: 0
   m_Name: Object062
   m_TagString: Untagged
@@ -782,9 +956,6 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -831,6 +1002,42 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.62882173, y: 0.41992176, z: 0.72323644}
   m_Center: {x: -0.056165725, y: 1.7433228, z: 0.71165067}
+--- !u!114 &4074066948638118167
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7428096482494699532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2280776957
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!114 &3237806962427795661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7428096482494699532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45f2ebdd8742a7d44bb0e2341fedafb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  crossSectionMaterial: {fileID: 0}
+  slicedPiecePrefab: {fileID: 7819331231158821684, guid: 1cf5c81a847e8bf47bac90d3d7f9322b,
+    type: 3}
 --- !u!1 &8816515674745424473
 GameObject:
   m_ObjectHideFlags: 0
@@ -843,6 +1050,8 @@ GameObject:
   - component: {fileID: 2164562284769515973}
   - component: {fileID: 2289177335374592584}
   - component: {fileID: 2210954186127828241}
+  - component: {fileID: 8684598628895817024}
+  - component: {fileID: 6365390127930780965}
   m_Layer: 0
   m_Name: Object063
   m_TagString: Untagged
@@ -890,9 +1099,6 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -939,3 +1145,39 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.6437968, y: 0.41992152, z: 0.7362181}
   m_Center: {x: -0.05616571, y: 1.1053329, z: -0.59341085}
+--- !u!114 &8684598628895817024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8816515674745424473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 1359962706
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!114 &6365390127930780965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8816515674745424473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45f2ebdd8742a7d44bb0e2341fedafb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  crossSectionMaterial: {fileID: 0}
+  slicedPiecePrefab: {fileID: 7819331231158821684, guid: 1cf5c81a847e8bf47bac90d3d7f9322b,
+    type: 3}

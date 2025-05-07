@@ -57,9 +57,9 @@ public class NetworkedProjectile : NetworkBehaviour
         this.initialSpeed = speed;
         this.ownerClientId = ownerId;
 
-        rb.linearVelocity = direction.normalized * initialSpeed;
+        rb.velocity = direction.normalized * initialSpeed;
         Debug.Log(
-            $"[Server] Projectile {NetworkObject.NetworkObjectId} initialized. Pos: {position}, Dir: {direction}, Speed: {speed}, Vel: {rb.linearVelocity}"
+            $"[Server] Projectile {NetworkObject.NetworkObjectId} initialized. Pos: {position}, Dir: {direction}, Speed: {speed}, Vel: {rb.velocity}"
         );
     }
 

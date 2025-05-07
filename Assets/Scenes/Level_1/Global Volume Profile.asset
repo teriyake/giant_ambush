@@ -92,13 +92,13 @@ MonoBehaviour:
     m_Value: 0.8
   scatter:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0.893
   clamp:
     m_OverrideState: 1
     m_Value: 65472
   tint:
     m_OverrideState: 1
-    m_Value: {r: 1, g: 1, b: 1, a: 1}
+    m_Value: {r: 1, g: 0.82558256, b: 0.794, a: 1}
   highQualityFiltering:
     m_OverrideState: 1
     m_Value: 0
@@ -175,6 +175,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   components:
   - {fileID: -1747645278199596541}
-  - {fileID: -781192506657060746}
   - {fileID: -4816149134344693068}
   - {fileID: -4887555996067929058}

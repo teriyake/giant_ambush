@@ -73,6 +73,25 @@ public class GameManager : NetworkBehaviour
     [SerializeField]
     GameObject attackProjectilePrefab;
 
+    [Header("Wind Settings")]
+    [SerializeField]
+    private float windEffectRadius = 2.5f;
+
+    [SerializeField]
+    private float windMaxDistance = 8f;
+
+    [SerializeField]
+    private float windForceFactor = 60f;
+
+    [SerializeField]
+    private LayerMask windAffectedLayers;
+
+    [SerializeField]
+    private float minStrengthToSlice = 7f;
+
+    [SerializeField]
+    private float objectPushConeAngle = 45f;
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -1052,6 +1071,74 @@ public class GameManager : NetworkBehaviour
             Debug.Log(
                 $"GameManager: Local client {NetworkManager.Singleton.LocalClientId} is not the AR player. No camera culling needed."
             );
+        }
+    }
+
+    public void HandleWindEffect(
+        Vector3 origin,
+        Vector3 direction,
+        float strength,
+        ulong instigatorClientId
+    )
+    {
+        if (!IsServer)
+            return;
+        if (CurrentPhase.Value != GamePhase.Playing)
+            return;
+        if (instigatorClientId != ARClientId.Value)
+        {
+            Debug.LogWarning(
+                $"[Server] Wind effect triggered by non-AR client {instigatorClientId}. Ignoring."
+            );
+            return;
+        }
+
+        Debug.Log(
+            $"[Server] Handling wind. Origin: {origin}, Dir: {direction}, Strength: {strength}"
+        );
+
+        Vector3 checkCenter = origin + direction * (windMaxDistance * 0.5f);
+        Collider[] hitColliders = Physics.OverlapSphere(
+            checkCenter,
+            windEffectRadius,
+            windAffectedLayers
+        );
+
+        foreach (var hitCollider in hitColliders)
+        {
+            if (hitCollider.gameObject.transform.root == transform)
+                continue;
+
+            Vector3 objectDirection = (hitCollider.transform.position - origin).normalized;
+            float angleToObject = Vector3.Angle(direction, objectDirection);
+
+            if (angleToObject > objectPushConeAngle)
+            {
+                continue;
+            }
+
+            float distance = Vector3.Distance(origin, hitCollider.transform.position);
+            float distanceFactor = Mathf.Clamp01(1f - (distance / windMaxDistance));
+            float effectiveStrength = strength * distanceFactor;
+
+            Rigidbody rb = hitCollider.GetComponentInParent<Rigidbody>();
+            if (rb != null && !rb.isKinematic)
+            {
+                rb.AddForce(direction * effectiveStrength * windForceFactor, ForceMode.Impulse);
+
+                Debug.Log($"[Server] Applied wind force to {hitCollider.name}");
+            }
+
+            SliceThis slicer = hitCollider.GetComponentInParent<SliceThis>();
+            if (slicer != null && effectiveStrength >= minStrengthToSlice)
+            {
+                Vector3 slicePosition = hitCollider.bounds.center;
+                Vector3 sliceNormal = (direction + UnityEngine.Random.insideUnitSphere * 0.2f).normalized;
+
+                slicer.SliceObjectServerRpc(sliceNormal, slicePosition, effectiveStrength);
+
+                Debug.Log($"[Server] Requested slice for {hitCollider.name}");
+            }
         }
     }
 }

@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 3410002800522771412}
   - component: {fileID: 8966185347783640877}
   - component: {fileID: 7229012000543011824}
+  - component: {fileID: 1534232894449705236}
+  - component: {fileID: 7405702512655818555}
   m_Layer: 0
   m_Name: Stool
   m_TagString: Untagged
@@ -106,3 +108,39 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -4102455882285522874, guid: cc27f5674605ba04ca0d210915754fbc, type: 3}
+--- !u!114 &1534232894449705236
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7229012000543011825}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 0
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!114 &7405702512655818555
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7229012000543011825}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45f2ebdd8742a7d44bb0e2341fedafb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  crossSectionMaterial: {fileID: 0}
+  slicedPiecePrefab: {fileID: 7819331231158821684, guid: 1cf5c81a847e8bf47bac90d3d7f9322b,
+    type: 3}

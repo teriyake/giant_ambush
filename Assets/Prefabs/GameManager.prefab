@@ -91,3 +91,11 @@ MonoBehaviour:
   furnitureSpawnUnderOffset: 1
   attackProjectilePrefab: {fileID: 7892813974732314615, guid: 045b34d7908f5644286827cf09a427a6,
     type: 3}
+  windEffectRadius: 2.5
+  windMaxDistance: 8
+  windForceFactor: 60
+  windAffectedLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  minStrengthToSlice: 7
+  objectPushConeAngle: 45
