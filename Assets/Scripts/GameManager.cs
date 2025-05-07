@@ -1128,6 +1128,10 @@ public class GameManager : NetworkBehaviour
 
                 Debug.Log($"[Server] Applied wind force to {hitCollider.name}");
             }
+            else
+            {
+                Debug.LogError($"[Server] Cannot apply wind force to {hitCollider.name}. Make sure it has a Rigidbody and is not kinematic!");
+            }
 
             SliceThis slicer = hitCollider.GetComponentInParent<SliceThis>();
             if (slicer != null && effectiveStrength >= minStrengthToSlice)

@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: -8816772605445369397}
   - component: {fileID: 1631736293786552838}
   - component: {fileID: -9174143602540099461}
+  - component: {fileID: 5265449174908929176}
   m_Layer: 0
   m_Name: Player_ARVR
   m_TagString: Untagged
@@ -66,9 +67,6 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -127,7 +125,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 4157037343
+  GlobalObjectIdHash: 2635813401
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -251,6 +249,25 @@ MonoBehaviour:
   m_ambientIntensityScalar: 1
   m_useSphericalHarmonics: 1
   m_calibrateOnLevelSpawn: 1
+--- !u!114 &5265449174908929176
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1618725237159975800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc4f1cdd5bdcdf24190eba3093fcb715, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  microphoneDeviceIndex: 0
+  sampleWindow: 128
+  volumeThreshold: 0.05
+  maxVolumeMap: 0.5
+  windStrengthMultiplier: 15
+  windCooldown: 0.3
+  windOriginOffset: 0.5
 --- !u!1001 &220495734188125470
 PrefabInstance:
   m_ObjectHideFlags: 0
