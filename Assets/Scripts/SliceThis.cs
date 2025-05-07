@@ -34,63 +34,7 @@ public class SliceThis : NetworkBehaviour
             );
             return;
         }
-        NetworkObject thisNetObj = GetComponent<NetworkObject>();
-        if (thisNetObj == null || !thisNetObj.IsSpawned)
-        {
-            Debug.LogWarning(
-                $"SliceThis ({gameObject.name}): Original object is not spawned or missing NetworkObject. Cannot slice.",
-                this
-            );
-            return;
-        }
-
-        Renderer originalRenderer = GetComponent<Renderer>();
-        Material[] originalMaterials =
-            (originalRenderer != null) ? originalRenderer.materials : new Material[0];
-
-        EzySlice.Plane plane = new EzySlice.Plane(slicePlanePositionInWorld, slicePlaneNormal);
-
-        SlicedHull slicedHull = SlicerExtensions.Slice(gameObject, plane, crossSectionMaterial);
-
-        if (slicedHull != null)
-        {
-            GameObject upperHullTemp = slicedHull.CreateUpperHull(gameObject, crossSectionMaterial);
-            if (upperHullTemp != null)
-            {
-                SetupSlicedPiece(
-                    upperHullTemp,
-                    originalMaterials,
-                    transform.position,
-                    transform.rotation,
-                    slicePlaneNormal,
-                    sliceStrength
-                );
-                Destroy(upperHullTemp);
-            }
-
-            GameObject lowerHullTemp = slicedHull.CreateLowerHull(gameObject, crossSectionMaterial);
-            if (lowerHullTemp != null)
-            {
-                SetupSlicedPiece(
-                    lowerHullTemp,
-                    originalMaterials,
-                    transform.position,
-                    transform.rotation,
-                    -slicePlaneNormal,
-                    sliceStrength
-                );
-                Destroy(lowerHullTemp);
-            }
-
-            thisNetObj.Despawn(true);
-        }
-        else
-        {
-            Debug.LogWarning(
-                $"SliceThis ({gameObject.name}): Slice operation returned null.",
-                this
-            );
-        }
+        BreakObj(this.gameObject);
 
         Debug.LogError("SliceThis: ServerRpc returned.");
     }
@@ -137,7 +81,10 @@ public class SliceThis : NetworkBehaviour
                 forceDirection * forceMagnitude * forceMultiplier * 0.1f,
                 ForceMode.Impulse
             );
-            rb.AddTorque(UnityEngine.Random.insideUnitSphere * forceMagnitude * 0.05f, ForceMode.Impulse);
+            rb.AddTorque(
+                UnityEngine.Random.insideUnitSphere * forceMagnitude * 0.05f,
+                ForceMode.Impulse
+            );
         }
 
         MeshCollider mc = spawnedPiece.GetComponent<MeshCollider>();
@@ -160,5 +107,84 @@ public class SliceThis : NetworkBehaviour
             );
             Destroy(spawnedPiece);
         }
+    }
+
+    private int maxIter = 3;
+    private Material[] mats;
+
+    public void BreakObj(GameObject obj)
+    {
+        Vector3 randomNormal = Random.onUnitSphere;
+        mats = gameObject.GetComponent<MeshRenderer>().materials;
+        List<(GameObject, Vector3)> slices = SliceGameObject(
+            obj,
+            new EzySlice.Plane(Vector3.zero, randomNormal),
+            0
+        );
+        foreach ((GameObject, Vector3) tuple in slices)
+        {
+            GameObject o = tuple.Item1;
+            Vector3 normal = tuple.Item2;
+            NetworkObject thisNetObj = GetComponent<NetworkObject>();
+            if (thisNetObj == null || !thisNetObj.IsSpawned)
+            {
+                Debug.LogWarning(
+                    $"SliceThis ({gameObject.name}): Original object is not spawned or missing NetworkObject. Cannot slice.",
+                    this
+                );
+                return;
+            }
+
+            SetupSlicedPiece(o, mats, o.transform.position, o.transform.rotation, normal, 0.1f);
+            Destroy(o);
+        }
+    }
+
+    List<(GameObject, Vector3)> SliceGameObject(
+        GameObject objToSlice,
+        EzySlice.Plane slicingPlane,
+        int call
+    )
+    {
+        SlicedHull slicedHull = SlicerExtensions.Slice(objToSlice, slicingPlane, mats[0]);
+        call++;
+
+        List<(GameObject, Vector3)> slicedObjects = new List<(GameObject, Vector3)>();
+
+        if (slicedHull != null)
+        {
+            GameObject upperHull = slicedHull.CreateUpperHull(objToSlice, null);
+            GameObject lowerHull = slicedHull.CreateLowerHull(objToSlice, null);
+            objToSlice.SetActive(false); // Hide the original object
+            Destroy(objToSlice); // Destroy the original object
+
+            if (call < maxIter)
+            {
+                slicedObjects.AddRange(
+                    SliceGameObject(
+                        upperHull,
+                        new EzySlice.Plane(Vector3.zero, Random.onUnitSphere),
+                        call
+                    )
+                );
+                slicedObjects.AddRange(
+                    SliceGameObject(
+                        lowerHull,
+                        new EzySlice.Plane(Vector3.zero, Random.onUnitSphere),
+                        call
+                    )
+                );
+            }
+            else
+            {
+                slicedObjects.Add((upperHull, slicingPlane.GetNormal()));
+                slicedObjects.Add((lowerHull, -slicingPlane.GetNormal()));
+            }
+        }
+        else
+        {
+            slicedObjects.Add((objToSlice, slicingPlane.GetNormal()));
+        }
+        return slicedObjects;
     }
 }
